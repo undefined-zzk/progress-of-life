@@ -50,21 +50,15 @@
       <div class="fss-inner w-full max-w-4xl px-6">
         <p class="text-sm text-sub tracking-[0.3em] mb-6 text-center">你还可能拥有</p>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-5">
-          <div class="card p-8 text-center">
-            <p class="display-number text-4xl sm:text-6xl font-bold text-primary"><AnimatedNumber :value="stats.weekendsLeft" /></p>
-            <p class="text-sm text-sub mt-3">个周末</p>
-          </div>
-          <div class="card p-8 text-center">
-            <p class="display-number text-4xl sm:text-6xl font-bold text-primary"><AnimatedNumber :value="stats.summersLeft" /></p>
-            <p class="text-sm text-sub mt-3">个夏天</p>
-          </div>
-          <div class="card p-8 text-center">
-            <p class="display-number text-4xl sm:text-6xl font-bold text-primary"><AnimatedNumber :value="stats.birthdaysLeft" /></p>
-            <p class="text-sm text-sub mt-3">次生日</p>
-          </div>
-          <div class="card p-8 text-center">
-            <p class="display-number text-4xl sm:text-6xl font-bold text-primary"><AnimatedNumber :value="stats.sunsetsLeft" /></p>
-            <p class="text-sm text-sub mt-3">次日落</p>
+          <div
+            v-for="item in remainingEvents"
+            :key="item.key"
+            class="card p-5 sm:p-8 text-center overflow-hidden"
+          >
+            <p class="display-number font-bold text-primary text-[clamp(1.75rem,6vw,3.75rem)] leading-none">
+              <AnimatedNumber :value="item.value" />
+            </p>
+            <p class="text-sm text-sub mt-3">{{ item.label }}</p>
           </div>
         </div>
         <p v-if="profile.city" class="mt-8 text-center text-sub">
@@ -183,6 +177,18 @@ const countdownUnits = computed(() => {
     { value: pad(c.hours), label: '时' },
     { value: pad(c.minutes), label: '分' },
     { value: pad(c.seconds), label: '秒' },
+  ]
+})
+
+// 剩余事件(周末/夏天/生日/日落)
+const remainingEvents = computed(() => {
+  if (!stats.value) return []
+  const s = stats.value
+  return [
+    { key: 'weekends', label: '个周末', value: s.weekendsLeft },
+    { key: 'summers', label: '个夏天', value: s.summersLeft },
+    { key: 'birthdays', label: '次生日', value: s.birthdaysLeft },
+    { key: 'sunsets', label: '次日落', value: s.sunsetsLeft },
   ]
 })
 

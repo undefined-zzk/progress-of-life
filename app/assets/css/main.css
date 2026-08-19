@@ -1,0 +1,81 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+/* ============================================================
+   人生进度 · 设计令牌
+   色彩遵循《人生进度_Web产品设计方案》第 31 节色彩规范
+   ============================================================ */
+@theme {
+  /* 品牌色 */
+  --color-primary: #e07a5f;
+  --color-primary-deep: #b85c45;
+  --color-accent: #f2cc8f;
+
+  /* 浅色主题 */
+  --color-bg: #faf7f2;
+  --color-card: #ffffff;
+  --color-ink: #292522;
+  --color-sub: #8c8178;
+  --color-line: #e9e1d8;
+
+  /* 深色主题(暖陶土暗色系) */
+  --color-bg-dark: #1f1a17;
+  --color-card-dark: #2a2420;
+  --color-ink-dark: #f4efe9;
+  --color-sub-dark: #a89a8f;
+  --color-line-dark: #3d352e;
+
+  /* 字体 */
+  --font-sans: "Inter", "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+  --font-display: "Inter", "PingFang SC", system-ui, sans-serif;
+  --font-mono: "SF Mono", "JetBrains Mono", ui-monospace, "Menlo", "Consolas", monospace;
+}
+
+/* 基础样式 */
+html {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-bg);
+  color: var(--color-ink);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* 深色主题:切换 CSS 变量实现全站配色切换 */
+.dark {
+  --color-bg: var(--color-bg-dark);
+  --color-card: var(--color-card-dark);
+  --color-ink: var(--color-ink-dark);
+  --color-sub: var(--color-sub-dark);
+  --color-line: var(--color-line-dark);
+}
+
+/* 大数字视觉核心 */
+.display-number {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+}
+
+/* 卡片通用样式 */
+.card {
+  background-color: var(--color-card);
+  border: 1px solid var(--color-line);
+  border-radius: 1rem;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+/* 尊重用户减少动效偏好 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

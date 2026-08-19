@@ -54,6 +54,24 @@ body {
   --color-line: var(--color-line-dark);
 }
 
+/* ============================================================
+   将 Nuxt UI 的 primary 色对齐到品牌陶土色
+   Nuxt UI 组件(USelect/UInput/UButton 等)自动跟随
+   ============================================================ */
+@theme {
+  --ui-primary: var(--color-primary);
+  --ui-primary-50: #fdf2ee;
+  --ui-primary-100: #fbe4dd;
+  --ui-primary-200: #f7c8ba;
+  --ui-primary-300: #f0a893;
+  --ui-primary-400: #e98d73;
+  --ui-primary-500: #e07a5f;
+  --ui-primary-600: #c96348;
+  --ui-primary-700: #b85c45;
+  --ui-primary-800: #96462f;
+  --ui-primary-900: #6f3323;
+}
+
 /* 大数字视觉核心 */
 .display-number {
   font-family: var(--font-mono);

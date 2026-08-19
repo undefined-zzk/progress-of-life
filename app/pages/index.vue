@@ -99,7 +99,14 @@
 // 首页:全屏滚动沉浸式 hero
 definePageMeta({ layout: 'immersive' })
 
-const { profile } = useAppState()
+const { profile, init } = useAppState()
+
+// 兜底:进入首页时若资料未加载,重新从 LocalStorage 读取
+onMounted(() => {
+  if (!profile.value) {
+    init()
+  }
+})
 
 const navLabels = ['开始', '核心理念', '你会看到什么', '隐私承诺']
 </script>

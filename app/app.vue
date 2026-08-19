@@ -8,15 +8,16 @@
 </template>
 
 <script setup lang="ts">
-// 应用初始化:启动实时时钟 + 初始化主题(用户资料由 life-init.client 插件加载)
+// 应用初始化:加载用户资料 + 启动实时时钟 + 初始化主题
 import { zh_cn as zhCN } from '@nuxt/ui/locale'
 
-const { now } = useAppState()
+const { init, now } = useAppState()
 const { initTheme } = useTheme()
 
-// 主题初始化(最早时机)
+// hydration 后初始化:加载 LocalStorage 资料 + 主题
 onMounted(() => {
   initTheme()
+  init()
 })
 
 // 每秒更新实时时间,驱动倒计时

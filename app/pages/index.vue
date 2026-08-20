@@ -26,22 +26,27 @@
         </p>
         <p v-if="!hideHeroNumbers" class="hero-extra text-2xl text-sub mt-4">天</p>
 
-        <!-- 实时倒计时(天 + 翻页时分秒):生命未结束时显示 -->
-        <div v-if="!isLifeEnded" class="mt-10 flex items-end justify-center gap-3 sm:gap-5">
-          <!-- 天:翻页卡片(与时分秒统一) -->
-          <div class="text-center">
-            <FlipClock :value="stats.countdown.days" size="xl" />
-            <span class="block text-sm text-sub mt-2">天</span>
-          </div>
-          <span class="text-5xl sm:text-7xl text-sub card-colon">:</span>
-          <!-- 时/分/秒:翻页 -->
-          <template v-for="(u, idx) in timeUnits" :key="idx">
-            <div class="text-center">
-              <FlipClock :value="u" size="xl" />
-              <span class="block text-sm text-sub mt-2">{{ timeLabels[idx] }}</span>
+        <!-- 实时倒计时(天 + 翻页时分秒):生命未结束时显示
+             用 CSS zoom 整体缩放(.cd-holder :style="{zoom:cdZoom}"),
+             zoom 直接缩放真实布局尺寸,不受 perspective/GSAP transform 影响,
+             由 JS 按视口宽度精确计算,手机必然缩小到位、桌面保持原始大小 -->
+        <div v-if="!isLifeEnded" class="mt-10 cd-holder" :style="{ zoom: cdZoom }">
+          <div class="flex items-end justify-center gap-3 sm:gap-5">
+            <!-- 天:翻页卡片(与时分秒统一) -->
+            <div class="text-center shrink-0">
+              <FlipClock :value="stats.countdown.days" size="xl" />
+              <span class="block text-sm text-sub mt-2">天</span>
             </div>
-            <span v-if="idx < timeUnits.length - 1" class="text-5xl sm:text-7xl text-sub card-colon">:</span>
-          </template>
+            <span class="text-5xl sm:text-7xl text-sub card-colon shrink-0">:</span>
+            <!-- 时/分/秒:翻页 -->
+            <template v-for="(u, idx) in timeUnits" :key="idx">
+              <div class="text-center shrink-0">
+                <FlipClock :value="u" size="xl" />
+                <span class="block text-sm text-sub mt-2">{{ timeLabels[idx] }}</span>
+              </div>
+              <span v-if="idx < timeUnits.length - 1" class="text-5xl sm:text-7xl text-sub card-colon shrink-0">:</span>
+            </template>
+          </div>
         </div>
         <p v-if="shortText && !isLifeEnded" class="hero-extra mt-10 text-sm hero-note">{{ shortText }}</p>
         <p v-else-if="!isLifeEnded" class="hero-extra mt-10 text-sm hero-note">如果活到 {{ profile.lifeExpectancy }} 岁,还有大约这些时间</p>
@@ -66,7 +71,7 @@
       <!-- 未计算:显示引导 hero -->
       <div v-else class="fss-inner relative z-10 text-center px-6">
         <p class="hero-eyebrow text-sm text-sub mb-10 tracking-[0.4em]">MY LIFE · 人生进度</p>
-        <h1 class="text-6xl sm:text-8xl md:text-9xl font-bold tracking-tight leading-[1.05] hero-title">
+        <h1 class="text-5xl sm:text-8xl md:text-9xl font-bold tracking-tight leading-[1.05] hero-title">
           今天,是你人生的<br />
           <span class="text-primary">第几天?</span>
         </h1>
@@ -108,22 +113,22 @@
 
     <!-- 第 3 屏:特性(右侧滑入) -->
     <section class="fss-panel" data-enter="right">
-      <div class="fss-inner w-full max-w-5xl px-6">
-        <p class="text-sm text-sub tracking-[0.3em] mb-12 text-center">你会看到什么</p>
-        <div class="grid md:grid-cols-3 gap-6">
-          <div class="card p-10 feature-card">
+      <div class="fss-inner w-full max-w-5xl px-5 sm:px-6">
+        <p class="text-sm text-sub tracking-[0.3em] mb-8 sm:mb-12 text-center">你会看到什么</p>
+        <div class="grid md:grid-cols-3 gap-5 sm:gap-6">
+          <div class="card p-7 sm:p-10 feature-card">
             <p class="display-number text-4xl font-bold text-primary mb-4">01</p>
-            <h3 class="text-xl font-semibold mb-3">走过的路</h3>
+            <h3 class="text-lg sm:text-xl font-semibold mb-3">走过的路</h3>
             <p class="text-sub leading-relaxed">基于你的出生日期,计算已经度过的每一天、每一小时。</p>
           </div>
-          <div class="card p-10 feature-card">
+          <div class="card p-7 sm:p-10 feature-card">
             <p class="display-number text-4xl font-bold text-primary mb-4">02</p>
-            <h3 class="text-xl font-semibold mb-3">剩下的时间</h3>
+            <h3 class="text-lg sm:text-xl font-semibold mb-3">剩下的时间</h3>
             <p class="text-sub leading-relaxed">基于假设寿命,估算剩余时间与可能经历的事件。</p>
           </div>
-          <div class="card p-10 feature-card">
+          <div class="card p-7 sm:p-10 feature-card">
             <p class="display-number text-4xl font-bold text-primary mb-4">03</p>
-            <h3 class="text-xl font-semibold mb-3">改变的可能</h3>
+            <h3 class="text-lg sm:text-xl font-semibold mb-3">改变的可能</h3>
             <p class="text-sub leading-relaxed">模拟改变习惯后,你可能会为自己多出多少时间。</p>
           </div>
         </div>
@@ -133,9 +138,9 @@
     <!-- 第 4 屏:隐私 -->
     <section class="fss-panel">
       <div class="fss-inner text-center px-6 max-w-2xl">
-        <p class="text-sm text-sub tracking-[0.3em] mb-12">隐私承诺</p>
-        <h2 class="text-4xl sm:text-5xl font-bold mb-8">你的数据<br />只属于你</h2>
-        <p class="text-lg text-sub leading-relaxed mb-12">
+        <p class="text-sm text-sub tracking-[0.3em] mb-8 sm:mb-12">隐私承诺</p>
+        <h2 class="text-3xl sm:text-5xl font-bold mb-6 sm:mb-8">你的数据<br />只属于你</h2>
+        <p class="text-base sm:text-lg text-sub leading-relaxed mb-8 sm:mb-12">
           出生日期、生活习惯等所有信息,<br />
           只在你的浏览器本地计算与保存,<br />
           不会上传到任何服务器。
@@ -175,8 +180,25 @@ useHead({ link: [{ rel: 'canonical', href: `${SITE_URL}/` }] })
 
 const { profile, stats, init } = useAppState()
 
+// 倒计时缩放:用 zoom 按视口宽度缩放(不依赖 media query / transform,必然生效)。
+// 原始倒计时总宽上限约 988px(9 张卡 + 3 冒号 + 间隙);可用宽 = 视口 - 左右内边距。
+const cdZoom = ref(1)
+const CD_BASE_WIDTH = 988
+function updateCdZoom() {
+  if (typeof window === 'undefined') return
+  const vw = window.innerWidth
+  if (vw > 900) {
+    cdZoom.value = 1 // 桌面保持原始大小
+    return
+  }
+  const available = vw - 48 // px-6 左右各 24px
+  cdZoom.value = Math.min(1, Math.max(0.3, available / CD_BASE_WIDTH))
+}
+
 // 兜底:进入首页时若资料未加载,重新从 LocalStorage 读取
 onMounted(() => {
+  updateCdZoom()
+  window.addEventListener('resize', updateCdZoom)
   if (!profile.value) {
     init()
   }
@@ -228,18 +250,24 @@ watch(isLifeEnded, (ended) => {
   animation: scrollHint 1.8s ease-in-out infinite;
 }
 
-/* 让"天/时/分/秒"之间的":"垂直居中对齐到翻页卡片中心(xl 尺寸)
-   容器为 items-end(卡片+标签底部对齐),":" 需上抬到卡片中心:
-   xl 卡片半高(4.25rem) + 标签区(mt-2 0.5rem + text-sm 行高约1.25rem) - ":" 字体半高 */
+/* 冒号垂直居中(xl 卡片 8.5rem 高,标签 mt-2+text-sm≈1.75rem,
+   桌面冒号 sm:text-7xl 半高2.25rem):4.25 + 1.75 - 2.25 = 3.75rem
+   手机冒号 text-5xl 半高1.5rem:4.25 + 1.75 - 1.5 = 4.5rem */
 .card-colon {
   position: relative;
-  margin-bottom: 4.75rem;
+  margin-bottom: 4.5rem;
 }
-
 @media (min-width: 640px) {
   .card-colon {
-    margin-bottom: 5rem;
+    margin-bottom: 3.75rem;
   }
+}
+
+/* 倒计时占位容器:原始高度(卡片8.5 + 标签 + 余量),zoom 会自动按比例缩放占位空间,
+   故无需额外高度补偿。 */
+.cd-holder {
+  height: 10.8rem;
+  overflow: visible;
 }
 
 /* ===== 第一屏:深色星空背景上的文字配色 =====

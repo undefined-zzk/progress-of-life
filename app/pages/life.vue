@@ -37,21 +37,23 @@
         <template v-else>
           <p v-if="shortText" class="text-xl sm:text-2xl text-sub mb-12">{{ shortText }}</p>
           <p v-else class="text-xl sm:text-2xl text-sub mb-12">如果活到 {{ profile.lifeExpectancy }} 岁,还有大约</p>
+          <div class="cd-holder w-full" :style="{ zoom: cdZoom }">
           <div class="flex items-end justify-center gap-3 sm:gap-5">
           <!-- 天:翻页卡片(与首页统一) -->
-          <div class="text-center">
+          <div class="text-center shrink-0">
             <FlipClock :value="stats.countdown.days" size="xl" />
-            <span class="block text-sm sm:text-base text-sub mt-3">天</span>
+            <span class="block text-sm sm:text-base text-sub mt-2">天</span>
           </div>
-          <span class="text-5xl sm:text-7xl text-sub card-colon">:</span>
+          <span class="text-5xl sm:text-7xl text-sub card-colon shrink-0">:</span>
           <!-- 时/分/秒:翻页 -->
           <template v-for="(u, idx) in timeUnits" :key="idx">
-            <div class="text-center">
+            <div class="text-center shrink-0">
               <FlipClock :value="u" size="xl" />
-              <span class="block text-sm sm:text-base text-sub mt-3">{{ timeLabels[idx] }}</span>
+              <span class="block text-sm sm:text-base text-sub mt-2">{{ timeLabels[idx] }}</span>
             </div>
-            <span v-if="idx < timeUnits.length - 1" class="text-5xl sm:text-7xl text-sub card-colon">:</span>
+            <span v-if="idx < timeUnits.length - 1" class="text-5xl sm:text-7xl text-sub card-colon shrink-0">:</span>
           </template>
+        </div>
         </div>
         </template>
       </div>
@@ -83,14 +85,14 @@
     <section v-if="!shortText" class="fss-panel" data-enter="left">
       <div class="fss-inner w-full max-w-3xl px-6">
         <p class="text-sm text-sub tracking-[0.3em] mb-6">时间都去哪了?</p>
-        <p class="text-2xl sm:text-3xl font-semibold mb-12">如果保持现在的习惯</p>
-        <div class="space-y-7">
-          <div v-for="item in timeAllocation" :key="item.label" class="flex items-center gap-5">
-            <span class="w-16 text-base text-sub shrink-0">{{ item.label }}</span>
+        <p class="text-2xl sm:text-3xl font-semibold mb-8 sm:mb-12">如果保持现在的习惯</p>
+        <div class="space-y-5 sm:space-y-7">
+          <div v-for="item in timeAllocation" :key="item.label" class="flex items-center gap-3 sm:gap-5">
+            <span class="w-14 sm:w-16 text-sm sm:text-base text-sub shrink-0">{{ item.label }}</span>
             <div class="flex-1 h-4 rounded-full bg-line overflow-hidden">
               <div class="h-full rounded-full transition-none" :style="{ width: `${item.width}%`, background: item.color }"></div>
             </div>
-            <span class="w-24 text-right text-base font-medium shrink-0">{{ item.text }}</span>
+            <span class="w-20 sm:w-24 text-right text-sm sm:text-base font-medium shrink-0">{{ item.text }}</span>
           </div>
         </div>
         <p class="mt-12 text-center text-sub text-lg leading-relaxed">
@@ -128,8 +130,9 @@
                   item.type === 'now' ? 'text-primary font-medium text-lg' : 'text-ink text-lg',
                   item.label !== '出生' ? 'cursor-pointer hover:text-primary transition-colors' : '',
                 ]"
-                :title="item.label !== '出生' ? '双击修改' : ''"
+                :title="item.label !== '出生' ? '点击修改' : ''"
                 @dblclick="item.label !== '出生' && startEdit(item)"
+                @click="item.label !== '出生' && !isTouch && startEdit(item)"
               >
                 {{ item.label }}
               </span>
@@ -145,12 +148,12 @@
                 @keyup.esc="cancelEdit"
                 @blur="saveEdit"
               />
-              <!-- 删除按钮:出生节点外,hover 显示 -->
+              <!-- 删除按钮:出生节点外,hover 显示;触屏设备由 CSS 常显 -->
               <button
                 v-if="item.label !== '出生'"
-                class="ml-auto text-xs text-sub/50 opacity-0 group-hover:opacity-100 hover:text-red-500 transition-all"
+                class="timeline-delete ml-auto text-xs text-sub/50 opacity-0 group-hover:opacity-100 hover:text-red-500 transition-all"
                 :aria-label="`删除 ${item.year} 年节点`"
-                @click="removeNode(item)"
+                @click.stop="removeNode(item)"
               >
                 删除
               </button>
@@ -275,8 +278,30 @@ watch(isLifeEnded, (ended) => {
 })
 const { streakDays } = useLifeStore()
 
-// 双保险:进入页面时确保资料已从 LocalStorage 恢复
-onMounted(() => init())
+// 是否触屏设备:用于让时间线节点在触屏上支持单击编辑(桌面端保留双击)
+const isTouch = ref(false)
+
+// 倒计时缩放:用 zoom 按视口宽度缩放,JS 驱动必然生效(不依赖 media query / transform)。
+// 桌面 >900px 保持原始大小,手机按可用宽度等比缩小。
+const cdZoom = ref(1)
+const CD_BASE_WIDTH = 988 // 原始倒计时总宽上限(9 卡 + 3 冒号 + 间隙,px)
+function updateCdZoom() {
+  if (typeof window === 'undefined') return
+  const vw = window.innerWidth
+  if (vw > 900) {
+    cdZoom.value = 1
+    return
+  }
+  const available = vw - 48 // px-6 左右各 24px
+  cdZoom.value = Math.min(1, Math.max(0.3, available / CD_BASE_WIDTH))
+}
+
+onMounted(() => {
+  isTouch.value = window.matchMedia('(hover: none)').matches
+  updateCdZoom()
+  window.addEventListener('resize', updateCdZoom)
+  init()
+})
 
 // 短寿命(不足1年)时,屏3之后的屏不显示,导航点也只保留前3个
 const navLabels = computed(() =>
@@ -468,16 +493,28 @@ function pad(n: number): string {
 </script>
 
 <style scoped>
-/* 与首页统一:让"天/时/分/秒"之间的":"垂直居中对齐到翻页卡片中心(xl 尺寸)
-   容器为 items-end(卡片+标签底部对齐),":" 需上抬到卡片中心 */
+/* 与首页统一:冒号垂直居中(xl 卡片 8.5rem 高,标签 mt-2+text-sm≈1.75rem,
+   桌面冒号 sm:text-7xl 半高2.25rem,手机 text-5xl 半高1.5rem)。 */
 .card-colon {
   position: relative;
-  margin-bottom: 4.75rem;
+  margin-bottom: 4.5rem;
 }
-
 @media (min-width: 640px) {
   .card-colon {
-    margin-bottom: 5rem;
+    margin-bottom: 3.75rem;
+  }
+}
+
+/* 倒计时占位容器:原始高度,zoom 会自动按比例缩放占位空间,无需高度补偿。 */
+.cd-holder {
+  height: 10.8rem;
+  overflow: visible;
+}
+
+/* 触屏设备:删除按钮始终可见(无 hover 状态) */
+@media (hover: none) {
+  .timeline-delete {
+    opacity: 1 !important;
   }
 }
 </style>

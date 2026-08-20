@@ -20,9 +20,9 @@
           <h2 class="text-3xl sm:text-4xl font-bold mb-3">你是哪一天来到这个世界的?</h2>
           <p class="text-sub mb-10">这是整个系统最重要的数据。</p>
 
-          <div class="flex items-end justify-center gap-3 sm:gap-4">
+          <div class="flex items-end justify-center gap-2 sm:gap-3 sm:gap-4">
             <!-- 年 -->
-            <div class="flex-1 max-w-35">
+            <div class="flex-1 min-w-0">
               <label class="block text-xs text-sub mb-2 text-center">年</label>
               <USelect
                 v-model="year"
@@ -33,9 +33,9 @@
                 placeholder="----"
               />
             </div>
-            <span class="text-3xl text-sub pb-2">/</span>
+            <span class="text-2xl sm:text-3xl text-sub pb-2">/</span>
             <!-- 月 -->
-            <div class="w-28">
+            <div class="w-16 sm:w-28 shrink-0">
               <label class="block text-xs text-sub mb-2 text-center">月</label>
               <USelect
                 v-model="month"
@@ -46,9 +46,9 @@
                 placeholder="--"
               />
             </div>
-            <span class="text-3xl text-sub pb-2">/</span>
+            <span class="text-2xl sm:text-3xl text-sub pb-2">/</span>
             <!-- 日 -->
-            <div class="w-28">
+            <div class="w-16 sm:w-28 shrink-0">
               <label class="block text-xs text-sub mb-2 text-center">日</label>
               <USelect
                 v-model="day"

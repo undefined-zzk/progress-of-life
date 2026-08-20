@@ -107,6 +107,7 @@ onUnmounted(() => {
   --fontSize: 3.4rem;
   --lineWidth: 2px;
   --radius: 6px;
+  --gap: 2px;
   --bg: var(--color-primary);
   --text: #fff;
 }
@@ -130,6 +131,7 @@ onUnmounted(() => {
 }
 
 .flip-group--xl {
+  /* 保持原始固定尺寸,窄屏缩放由父容器 .cd-holder 的 CSS zoom 统一处理 */
   --width: 5.2rem;
   --height: 8.5rem;
   --fontSize: 6.4rem;
@@ -137,7 +139,7 @@ onUnmounted(() => {
 
 .flip {
   position: relative;
-  margin: 0 2px;
+  margin: 0 var(--gap);
   width: var(--width);
   height: var(--height);
   font-size: var(--fontSize);

@@ -5,32 +5,32 @@
 
     <!-- 分享卡片 -->
     <div ref="cardEl" class="share-card mx-auto max-w-md rounded-2xl overflow-hidden shadow-lg">
-      <div class="p-10 text-center bg-card">
-        <p class="text-xs tracking-[0.3em] text-sub mb-8">MY LIFE</p>
-        <p class="text-lg text-sub mb-2">第</p>
-        <p class="display-number text-7xl font-bold text-primary leading-none">{{ stats.daysLived.toLocaleString('en-US') }}</p>
-        <p class="text-lg text-sub mt-2">天</p>
+      <div class="p-8 sm:p-10 text-center bg-card">
+        <p class="text-xs tracking-[0.3em] text-sub mb-6 sm:mb-8">MY LIFE</p>
+        <p class="text-base sm:text-lg text-sub mb-2">第</p>
+        <p class="display-number text-6xl sm:text-7xl font-bold text-primary leading-none">{{ stats.daysLived.toLocaleString('en-US') }}</p>
+        <p class="text-base sm:text-lg text-sub mt-2">天</p>
 
-        <div class="my-8">
-          <p class="display-number text-5xl font-bold">{{ formatPercent(stats.progressPercent) }}%</p>
+        <div class="my-6 sm:my-8">
+          <p class="display-number text-4xl sm:text-5xl font-bold">{{ formatPercent(stats.progressPercent) }}%</p>
           <p class="text-sm text-sub mt-2">已经走过的人生</p>
         </div>
 
-        <div class="h-3 rounded-full bg-line overflow-hidden mb-8">
+        <div class="h-3 rounded-full bg-line overflow-hidden mb-6 sm:mb-8">
           <div class="h-full rounded-full bg-linear-to-r from-primary to-accent" :style="{ width: `${stats.progressPercent}%` }"></div>
         </div>
 
         <div class="grid grid-cols-3 gap-2 text-center">
           <div>
-            <p class="display-number text-2xl font-bold">{{ stats.weekendsLeft.toLocaleString('en-US') }}</p>
+            <p class="display-number text-xl sm:text-2xl font-bold">{{ stats.weekendsLeft.toLocaleString('en-US') }}</p>
             <p class="text-xs text-sub mt-1">个周末</p>
           </div>
           <div>
-            <p class="display-number text-2xl font-bold">{{ stats.sunsetsLeft.toLocaleString('en-US') }}</p>
+            <p class="display-number text-xl sm:text-2xl font-bold">{{ stats.sunsetsLeft.toLocaleString('en-US') }}</p>
             <p class="text-xs text-sub mt-1">次日落</p>
           </div>
           <div>
-            <p class="display-number text-2xl font-bold">{{ stats.daysLeft.toLocaleString('en-US') }}</p>
+            <p class="display-number text-xl sm:text-2xl font-bold">{{ stats.daysLeft.toLocaleString('en-US') }}</p>
             <p class="text-xs text-sub mt-1">天</p>
           </div>
         </div>

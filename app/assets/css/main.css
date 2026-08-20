@@ -121,3 +121,59 @@ body {
   height: 132% !important;
   transform: translate(-50%, -50%) !important;
 }
+
+/* ============================================================
+   移动端 / 触屏适配基础样式
+   ============================================================ */
+
+/* 1. 触控元素最小可点击区域(44px,Apple/Android 推荐)
+   仅针对没有显式尺寸的小交互元素,避免影响布局大块按钮 */
+button,
+a,
+[role="button"],
+label,
+input[type="checkbox"],
+input[type="radio"] {
+  touch-action: manipulation; /* 去除 300ms 点击延迟,禁用双击缩放干扰 */
+}
+
+/* 2. 移除 iOS 点击高亮,改为自定义过渡 */
+a,
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 3. 输入框/下拉在 iOS 上字号过小会触发页面缩放,
+      强制最小 16px 防止聚焦时自动放大 */
+input,
+select,
+textarea,
+button {
+  font-size: max(16px, 1rem);
+}
+
+/* 4. 图片默认不超出容器,保持清晰与比例 */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* 5. 安全区域:为刘海屏 / 底部手势条预留空间
+   用于固定定位的导航和底部操作栏 */
+.safe-top {
+  padding-top: env(safe-area-inset-top, 0);
+}
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+.safe-x {
+  padding-left: env(safe-area-inset-left, 0);
+  padding-right: env(safe-area-inset-right, 0);
+}
+
+/* 6. 长数字(如天数)在小屏允许断行收缩,避免溢出 */
+.display-number {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}

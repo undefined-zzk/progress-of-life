@@ -1,17 +1,17 @@
 <template>
   <div class="min-h-screen relative">
     <!-- 悬浮品牌标识 + 返回 -->
-    <header class="app-header fixed top-0 left-0 right-0 z-50 pointer-events-none" :class="{ 'is-hero': isHero }">
-      <div class="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between pointer-events-auto">
-        <NuxtLink to="/" class="logo-brand text-lg font-semibold tracking-tight flex items-center gap-2.5">
-          <img src="/logo.webp" alt="人生进度" class="w-8 h-8 rounded-lg object-cover" />
-          人生进度
+    <header class="app-header fixed top-0 left-0 right-0 z-50 pointer-events-none safe-top" :class="{ 'is-hero': isHero }">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between gap-2 pointer-events-auto">
+        <NuxtLink to="/" class="logo-brand text-base sm:text-lg font-semibold tracking-tight flex items-center gap-2 min-h-10">
+          <img src="/logo.webp" alt="人生进度" class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg object-cover" />
+          <span class="hidden sm:inline">人生进度</span>
         </NuxtLink>
 
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2 sm:gap-4">
           <template v-if="profile">
-            <NuxtLink to="/life" class="nav-link text-sm text-sub hover:text-ink transition-colors">我的进度</NuxtLink>
-            <NuxtLink to="/simulator" class="nav-link text-sm text-sub hover:text-ink transition-colors">模拟器</NuxtLink>
+            <NuxtLink to="/life" class="nav-link text-sm text-sub hover:text-ink transition-colors px-1 sm:px-0 py-2 min-h-10 flex items-center">我的进度</NuxtLink>
+            <NuxtLink to="/simulator" class="nav-link text-sm text-sub hover:text-ink transition-colors px-1 sm:px-0 py-2 min-h-10 flex items-center">模拟器</NuxtLink>
           </template>
           <!-- 全屏展示:仅在首页且已计算过(已有 profile)时显示,点击将首页第一屏进入/退出全屏 -->
           <button

@@ -1,21 +1,21 @@
 <template>
   <div class="min-h-screen flex flex-col">
     <!-- 顶部导航 -->
-    <header class="sticky top-0 z-50 backdrop-blur-md bg-bg/80 border-b border-line">
-      <nav class="max-w-5xl mx-auto px-5 h-16 flex items-center justify-between">
-        <NuxtLink to="/" class="text-lg font-semibold tracking-tight flex items-center gap-2.5">
-          <img src="/logo.webp" alt="人生进度" class="w-8 h-8 rounded-lg object-cover" />
-          人生进度
+    <header class="sticky top-0 z-50 backdrop-blur-md bg-bg/80 border-b border-line safe-top">
+      <nav class="max-w-5xl mx-auto px-4 sm:px-5 h-14 sm:h-16 flex items-center justify-between gap-2">
+        <NuxtLink to="/" class="text-base sm:text-lg font-semibold tracking-tight flex items-center gap-2 min-h-10">
+          <img src="/logo.webp" alt="人生进度" class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg object-cover" />
+          <span class="hidden sm:inline">人生进度</span>
         </NuxtLink>
 
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-1.5 sm:gap-4">
           <template v-if="profile">
-            <NuxtLink to="/life" class="text-sm text-sub hover:text-ink transition-colors">我的进度</NuxtLink>
-            <NuxtLink to="/simulator" class="text-sm text-sub hover:text-ink transition-colors">模拟器</NuxtLink>
+            <NuxtLink to="/life" class="text-sm text-sub hover:text-ink transition-colors px-2 py-2 min-h-10 flex items-center">我的进度</NuxtLink>
+            <NuxtLink to="/simulator" class="text-sm text-sub hover:text-ink transition-colors px-2 py-2 min-h-10 flex items-center">模拟器</NuxtLink>
           </template>
           <!-- 主题切换 -->
           <button
-            class="w-9 h-9 rounded-full flex items-center justify-center border border-line hover:bg-card transition-colors"
+            class="w-9 h-9 min-w-9 rounded-full flex items-center justify-center border border-line hover:bg-card transition-colors"
             :aria-label="isDark ? '切换到浅色主题' : '切换到深色主题'"
             @click="toggleTheme"
           >
@@ -32,7 +32,7 @@
     </main>
 
     <!-- 页脚 -->
-    <footer class="border-t border-line py-8">
+    <footer class="border-t border-line py-8 safe-bottom">
       <div class="max-w-5xl mx-auto px-5 text-center text-sm text-sub">
         <p>今天,是你人生的第几天?</p>
         <p class="mt-1 text-xs">所有数据仅在浏览器本地计算与存储,不会上传服务器。</p>

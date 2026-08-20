@@ -15,7 +15,11 @@ export default defineNuxtConfig({
       htmlAttrs: { lang: 'zh-CN' },
       meta: [
         { name: 'charset', content: 'utf-8' },
-        { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+        { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
+        { name: 'theme-color', content: '#faf7f2' },
+        { name: 'apple-mobile-web-app-capable', content: 'yes' },
+        { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
+        { name: 'mobile-web-app-capable', content: 'yes' },
         { name: 'description', content: '一个记录与感受人生进度的工具。输入出生日期,看看你已经走过了多少天、多少小时,以及基于假设寿命还剩下多少时间。你的数据只在浏览器本地计算与保存,不会上传到任何服务器。' },
         { name: 'keywords', content: '人生进度,人生倒计时,今天是你人生的第几天,生命时间,人生计算器,第几天' },
         { name: 'author', content: '人生进度' },

@@ -57,6 +57,12 @@ onMounted(() => {
   ctx = gsap.context(() => {
     const panels = gsap.utils.toArray<HTMLElement>('.fss-panel', root.value)
 
+    // 移动端 / 减少动效偏好:用轻量淡入替代 3D 翻转 + 模糊,
+    // 既保证低端设备流畅,也避免触屏设备上出现布局抖动或溢出。
+    const isMobile = window.matchMedia('(max-width: 768px)').matches
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const useSimple = isMobile || reducedMotion
+
     // 每个面板:根据 data-enter 属性决定进入方向
     // up:从下方冲入(默认)  left:从左侧滑入  right:从右侧滑入  down:从上方坠入
     panels.forEach((panel) => {
@@ -67,31 +73,37 @@ onMounted(() => {
       const from: gsap.TweenVars = { autoAlpha: 0, ease: 'none' }
       const to: gsap.TweenVars = { autoAlpha: 1, x: 0, y: 0, scale: 1, rotateX: 0, rotateY: 0, filter: 'blur(0px)', ease: 'none', transformPerspective: 800 }
 
-      switch (direction) {
-        case 'left':
-          from.x = -window.innerWidth * 0.6
-          from.scale = 0.9
-          from.filter = 'blur(6px)'
-          break
-        case 'right':
-          from.x = window.innerWidth * 0.6
-          from.scale = 0.9
-          from.filter = 'blur(6px)'
-          break
-        case 'down':
-          from.y = -200
-          from.scale = 0.85
-          from.rotateX = -20
-          from.filter = 'blur(8px)'
-          break
-        case 'up':
-        default:
-          from.y = 200
-          from.scale = 0.7
-          from.rotateX = 25
-          from.rotateY = -12
-          from.filter = 'blur(8px)'
-          break
+      if (useSimple) {
+        // 简单模式:仅轻微位移 + 淡入,无 3D / 模糊
+        from.y = 24
+        from.scale = 0.98
+      } else {
+        switch (direction) {
+          case 'left':
+            from.x = -window.innerWidth * 0.6
+            from.scale = 0.9
+            from.filter = 'blur(6px)'
+            break
+          case 'right':
+            from.x = window.innerWidth * 0.6
+            from.scale = 0.9
+            from.filter = 'blur(6px)'
+            break
+          case 'down':
+            from.y = -200
+            from.scale = 0.85
+            from.rotateX = -20
+            from.filter = 'blur(8px)'
+            break
+          case 'up':
+          default:
+            from.y = 200
+            from.scale = 0.7
+            from.rotateX = 25
+            from.rotateY = -12
+            from.filter = 'blur(8px)'
+            break
+        }
       }
 
       gsap.fromTo(target, from, {

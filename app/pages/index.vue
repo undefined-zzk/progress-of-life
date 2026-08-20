@@ -1,8 +1,40 @@
 <template>
   <FullScreenScroll :labels="navLabels">
-    <!-- 第 1 屏:Hero -->
+    <!-- 第 1 屏:Hero / 已计算过则显示倒计时 -->
     <section class="fss-panel">
-      <div class="fss-inner text-center px-6">
+      <!-- 已计算过:第一屏显示倒计时 -->
+      <div v-if="profile && stats" class="fss-inner text-center px-6">
+        <p class="hero-eyebrow text-sm text-sub mb-8 tracking-[0.4em]">MY LIFE · 人生进度</p>
+        <p class="text-lg text-sub mb-3">今天是你人生的</p>
+        <p class="display-number text-[clamp(4rem,16vw,12rem)] font-bold text-primary leading-none tracking-tight">
+          {{ stats.daysLived.toLocaleString('en-US') }}
+        </p>
+        <p class="text-2xl text-sub mt-3">天</p>
+
+        <!-- 实时倒计时(翻页时钟) -->
+        <div class="mt-12 flex items-start justify-center gap-3 sm:gap-5">
+          <template v-for="(u, idx) in countdownUnits" :key="idx">
+            <div class="text-center">
+              <FlipClock :value="u.value" size="md" class="text-3xl sm:text-5xl" />
+              <span class="block text-sm text-sub mt-2">{{ u.label }}</span>
+            </div>
+            <span v-if="idx < countdownUnits.length - 1" class="text-2xl sm:text-4xl text-sub pt-2">:</span>
+          </template>
+        </div>
+        <p class="mt-8 text-sm text-sub">如果活到 {{ profile.lifeExpectancy }} 岁,还有大约这些时间</p>
+
+        <div class="mt-12 flex flex-col sm:flex-row items-center justify-center gap-5 hero-cta">
+          <NuxtLink
+            to="/life"
+            class="inline-flex items-center justify-center px-12 py-5 rounded-full bg-primary text-white font-medium text-xl hover:bg-primary-deep transition-all hover:scale-[1.03] active:scale-[0.98]"
+          >
+            查看我的进度 →
+          </NuxtLink>
+        </div>
+      </div>
+
+      <!-- 未计算:显示引导 hero -->
+      <div v-else class="fss-inner text-center px-6">
         <p class="hero-eyebrow text-sm text-sub mb-10 tracking-[0.4em]">MY LIFE · 人生进度</p>
         <h1 class="text-6xl sm:text-8xl md:text-9xl font-bold tracking-tight leading-[1.05] hero-title">
           今天,是你人生的<br />
@@ -20,15 +52,9 @@
             开始计算
             <span class="transition-transform group-hover:translate-x-1.5">→</span>
           </NuxtLink>
-          <NuxtLink
-            v-if="profile"
-            to="/life"
-            class="inline-flex items-center justify-center px-12 py-5 rounded-full border border-line text-ink dark:text-ink-dark font-medium text-xl hover:bg-card dark:hover:bg-card-dark transition-colors"
-          >
-            查看我的进度
-          </NuxtLink>
         </div>
       </div>
+
       <!-- 底部滚动提示 -->
       <div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-sub">
         <span class="text-xs tracking-widest">SCROLL</span>
@@ -99,7 +125,7 @@
 // 首页:全屏滚动沉浸式 hero
 definePageMeta({ layout: 'immersive' })
 
-const { profile, init } = useAppState()
+const { profile, stats, init } = useAppState()
 
 // 兜底:进入首页时若资料未加载,重新从 LocalStorage 读取
 onMounted(() => {
@@ -109,6 +135,22 @@ onMounted(() => {
 })
 
 const navLabels = ['开始', '核心理念', '你会看到什么', '隐私承诺']
+
+// 实时倒计时单位
+const countdownUnits = computed(() => {
+  if (!stats.value) return []
+  const c = stats.value.countdown
+  return [
+    { value: c.days.toLocaleString('en-US'), label: '天' },
+    { value: pad(c.hours), label: '时' },
+    { value: pad(c.minutes), label: '分' },
+    { value: pad(c.seconds), label: '秒' },
+  ]
+})
+
+function pad(n: number): string {
+  return String(n).padStart(2, '0')
+}
 </script>
 
 <style scoped>

@@ -33,13 +33,13 @@
       <div class="fss-inner text-center px-6">
         <p class="text-sm text-sub tracking-[0.3em] mb-8">实时倒计时</p>
         <p class="text-xl sm:text-2xl text-sub mb-12">如果活到 {{ profile.lifeExpectancy }} 岁,还有大约</p>
-        <div class="flex items-center justify-center gap-2 sm:gap-5">
+        <div class="flex items-start justify-center gap-3 sm:gap-5">
           <template v-for="(u, idx) in countdownUnits" :key="idx">
             <div class="text-center">
-              <span class="display-number block text-5xl sm:text-7xl md:text-8xl font-bold leading-none">{{ u.value }}</span>
+              <FlipClock :value="u.value" size="lg" class="text-4xl sm:text-6xl" />
               <span class="block text-sm sm:text-base text-sub mt-3">{{ u.label }}</span>
             </div>
-            <span v-if="idx < countdownUnits.length - 1" class="text-3xl sm:text-5xl text-sub self-start mt-2">:</span>
+            <span v-if="idx < countdownUnits.length - 1" class="text-3xl sm:text-5xl text-sub pt-3">:</span>
           </template>
         </div>
       </div>

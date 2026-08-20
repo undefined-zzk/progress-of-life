@@ -71,6 +71,21 @@
 <script setup lang="ts">
 // share:分享卡片生成,只展示核心数据,不泄露隐私
 import { formatPercent } from '~/utils/life'
+import { SITE_URL, OG_IMAGE } from '~/utils/seo'
+
+useSeoMeta({
+  title: '分享我的人生',
+  description: '生成一张只展示核心人生数据、不泄露隐私的分享卡片。你的数据只在本地,不会上传。',
+  ogTitle: '分享我的人生',
+  ogDescription: '生成一张不泄露隐私的人生进度分享卡片。',
+  ogImage: OG_IMAGE,
+  ogType: 'website',
+  twitterCard: 'summary_large_image',
+  twitterTitle: '分享我的人生',
+  twitterDescription: '生成一张不泄露隐私的人生进度分享卡片。',
+  twitterImage: OG_IMAGE,
+})
+useHead({ link: [{ rel: 'canonical', href: `${SITE_URL}/share` }] })
 
 const { profile, stats } = useAppState()
 const cardEl = ref<HTMLElement | null>(null)

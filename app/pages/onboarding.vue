@@ -299,6 +299,21 @@
 // onboarding:分步问答式信息收集,遵循文档"逐步问答、少收集"原则
 import type { UserProfile } from '~/types/life'
 import { cityList } from '~/data/cities'
+import { SITE_URL, OG_IMAGE } from '~/utils/seo'
+
+useSeoMeta({
+  title: '生成你的人生进度',
+  description: '通过几个简单问题(出生日期、城市、生活习惯、假设寿命),生成属于你的人生进度报告。你的数据只在浏览器本地,不会上传。',
+  ogTitle: '生成你的人生进度',
+  ogDescription: '几个简单问题,生成属于你的人生进度报告。数据只在本地。',
+  ogImage: OG_IMAGE,
+  ogType: 'website',
+  twitterCard: 'summary_large_image',
+  twitterTitle: '生成你的人生进度',
+  twitterDescription: '几个简单问题,生成属于你的人生进度报告。数据只在本地。',
+  twitterImage: OG_IMAGE,
+})
+useHead({ link: [{ rel: 'canonical', href: `${SITE_URL}/onboarding` }] })
 
 const steps = ['出生日期', '出生时间', '城市', '人生状态', '睡眠', '工作', '手机', '寿命']
 const currentStep = ref(1)

@@ -116,6 +116,21 @@
 // simulator:人生模拟器,实时计算"如果改变习惯会怎样"
 import { reactive, computed, watch } from 'vue'
 import { computeSimulation } from '~/utils/life'
+import { SITE_URL, OG_IMAGE } from '~/utils/seo'
+
+useSeoMeta({
+  title: '人生模拟器',
+  description: '模拟改变睡眠、工作、手机等习惯后,你可能会为自己多出多少时间。你的数据只在本地,不会上传。',
+  ogTitle: '人生模拟器',
+  ogDescription: '模拟改变习惯后,你可能会为自己多出多少时间。',
+  ogImage: OG_IMAGE,
+  ogType: 'website',
+  twitterCard: 'summary_large_image',
+  twitterTitle: '人生模拟器',
+  twitterDescription: '模拟改变习惯后,你可能会为自己多出多少时间。',
+  twitterImage: OG_IMAGE,
+})
+useHead({ link: [{ rel: 'canonical', href: `${SITE_URL}/simulator` }] })
 
 const { profile, now } = useAppState()
 

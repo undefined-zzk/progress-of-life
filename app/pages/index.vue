@@ -155,7 +155,23 @@
 // 首页:全屏滚动沉浸式 hero
 import { lifeEndQuotes } from '~/data/quotes'
 import type { LifeQuote } from '~/data/quotes'
+import { SITE_URL, OG_IMAGE } from '~/utils/seo'
 definePageMeta({ layout: 'immersive' })
+
+// 首页 SEO
+useSeoMeta({
+  title: '今天是你人生的第几天',
+  description: '输入出生日期,看看你已经走过了多少天、多少小时,以及基于假设寿命还剩下多少时间。你的数据只在浏览器本地,不会上传到任何服务器。',
+  ogTitle: '今天是你人生的第几天',
+  ogDescription: '看看你已经走过了多少天,以及未来还剩下什么。你的数据只在本地,不会上传。',
+  ogImage: OG_IMAGE,
+  ogType: 'website',
+  twitterCard: 'summary_large_image',
+  twitterTitle: '今天是你人生的第几天',
+  twitterDescription: '看看你已经走过了多少天,以及未来还剩下什么。',
+  twitterImage: OG_IMAGE,
+})
+useHead({ link: [{ rel: 'canonical', href: `${SITE_URL}/` }] })
 
 const { profile, stats, init } = useAppState()
 

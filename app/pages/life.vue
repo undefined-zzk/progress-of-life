@@ -228,11 +228,27 @@
 // life:全屏滚动的核心页面
 definePageMeta({ layout: 'immersive' })
 
+// 人生进度报告 SEO
+useSeoMeta({
+  title: '我的人生进度报告',
+  description: '基于出生日期与假设寿命生成的人生进度报告:已活天数、人生进度、剩余时间与人生时间线。你的数据只在本地,不会上传。',
+  ogTitle: '我的人生进度报告',
+  ogDescription: '看看我已经走过多少天、多少小时,以及未来还剩下什么。',
+  ogImage: OG_IMAGE,
+  ogType: 'website',
+  twitterCard: 'summary_large_image',
+  twitterTitle: '我的人生进度报告',
+  twitterDescription: '看看我已经走过多少天、多少小时,以及未来还剩下什么。',
+  twitterImage: OG_IMAGE,
+})
+useHead({ link: [{ rel: 'canonical', href: `${SITE_URL}/life` }] })
+
 import { onMounted } from 'vue'
 import type { TimelineItem } from '~/types/life'
 import { buildTimeline, formatPercent, shortLifeText, livedDurationText, lifespanMs, birthMoment } from '~/utils/life'
 import { lifeEndQuotes } from '~/data/quotes'
 import type { LifeQuote } from '~/data/quotes'
+import { SITE_URL, OG_IMAGE } from '~/utils/seo'
 
 const { profile, stats, init, now, setProfile } = useAppState()
 

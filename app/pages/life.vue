@@ -21,10 +21,6 @@
         <p class="text-2xl sm:text-3xl font-semibold mb-8">你已经走过</p>
         <p class="display-number text-7xl sm:text-9xl font-bold text-primary leading-none mb-10">{{ formatPercent(stats.progressPercent) }}<span class="text-4xl">%</span></p>
         <ProgressBar :percent="stats.progressPercent" />
-        <p v-if="!shortText" class="mt-10 text-sm text-sub leading-relaxed">
-          基于你设定的 {{ profile.lifeExpectancy }} 岁假设寿命。<br />
-          以下数据均为估算,并非对实际寿命的预测。
-        </p>
       </div>
     </section>
 
@@ -109,21 +105,89 @@
       <div class="fss-inner w-full max-w-3xl px-6">
         <p class="text-sm text-sub tracking-[0.3em] mb-6">人生时间线</p>
         <div class="card p-10">
-          <div v-for="(item, i) in timeline" :key="i" class="relative pl-10 pb-9" :class="{ 'pb-0': i === timeline.length - 1 }">
-            <div v-if="i < timeline.length - 1" class="absolute left-2.25 top-5 bottom-0 w-px bg-line"></div>
+          <div
+            v-for="(item, i) in timeline"
+            :key="i"
+            class="group relative pl-10 pb-9"
+            :class="{ 'pb-0': i === timeline.length - 1 }"
+          >
+            <div v-if="i < timeline.length - 1" class="absolute left-2.25 top-4.25 bottom-0 w-px bg-line"></div>
             <span
-              class="absolute left-0 top-2.5 w-5 h-5 rounded-full border-2"
+              class="absolute left-0 top-1.25 w-5 h-5 rounded-full border-2"
               :class="{
                 'bg-primary border-primary': item.type === 'now' || item.type === 'milestone',
                 'bg-card border-line': item.type === 'past' || item.type === 'future',
               }"
             ></span>
-            <div class="flex items-baseline gap-4">
-              <span class="display-number text-xl font-semibold">{{ item.year }}</span>
-              <span :class="item.type === 'now' ? 'text-primary font-medium text-lg' : 'text-ink text-lg'">{{ item.label }}</span>
+            <div class="flex items-center gap-4">
+              <span class="display-number text-xl font-semibold shrink-0">{{ item.year }}</span>
+              <!-- 双击内容可修改(出生节点除外) -->
+              <span
+                v-if="editingYear !== item.year"
+                :class="[
+                  item.type === 'now' ? 'text-primary font-medium text-lg' : 'text-ink text-lg',
+                  item.label !== '出生' ? 'cursor-pointer hover:text-primary transition-colors' : '',
+                ]"
+                :title="item.label !== '出生' ? '双击修改' : ''"
+                @dblclick="item.label !== '出生' && startEdit(item)"
+              >
+                {{ item.label }}
+              </span>
+              <!-- 编辑中的输入框 -->
+              <input
+                v-else
+                v-focus
+                v-model="editingText"
+                type="text"
+                maxlength="30"
+                class="flex-1 min-w-0 px-3 py-1 rounded-lg border-2 border-primary bg-card text-base text-ink focus:outline-none"
+                @keyup.enter="saveEdit"
+                @keyup.esc="cancelEdit"
+                @blur="saveEdit"
+              />
+              <!-- 删除按钮:出生节点外,hover 显示 -->
+              <button
+                v-if="item.label !== '出生'"
+                class="ml-auto text-xs text-sub/50 opacity-0 group-hover:opacity-100 hover:text-red-500 transition-all"
+                :aria-label="`删除 ${item.year} 年节点`"
+                @click="removeNode(item)"
+              >
+                删除
+              </button>
             </div>
           </div>
-          <p class="mt-8 text-xs text-sub">未来时间线只是基于年龄阶段的示意,不代表真实预测。</p>
+          <!-- 添加自定义时间线节点 -->
+          <div class="mt-8 border-t border-line pt-6">
+            <p class="text-sm font-medium text-ink mb-4">书写人生的注脚</p>
+            <div class="flex flex-col sm:flex-row gap-3">
+              <input
+                :value="customYear"
+                type="number"
+                placeholder="年份"
+                step="1"
+                :min="minYear"
+                :max="maxYear"
+                class="w-28 px-3 py-2.5 rounded-xl border-2 border-line bg-card text-center text-base font-medium text-ink focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"
+                @input="onYearInput"
+              />
+              <input
+                v-model="customText"
+                type="text"
+                placeholder="你想在那年做什么"
+                maxlength="30"
+                class="flex-1 px-4 py-2.5 rounded-xl border-2 border-line bg-card text-base text-ink focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"
+                @keyup.enter="addCustomNode"
+              />
+              <button
+                type="button"
+                class="px-5 py-2.5 rounded-xl bg-primary text-white text-base font-medium hover:bg-primary-deep transition-colors"
+                @click="addCustomNode"
+              >
+                添加
+              </button>
+            </div>
+            <p v-if="customNodeError" class="mt-2 text-sm text-red-500">{{ customNodeError }}</p>
+          </div>
         </div>
       </div>
     </section>
@@ -166,11 +230,11 @@ definePageMeta({ layout: 'immersive' })
 
 import { onMounted } from 'vue'
 import type { TimelineItem } from '~/types/life'
-import { buildTimeline, formatPercent, shortLifeText, livedDurationText, lifespanMs } from '~/utils/life'
+import { buildTimeline, formatPercent, shortLifeText, livedDurationText, lifespanMs, birthMoment } from '~/utils/life'
 import { lifeEndQuotes } from '~/data/quotes'
 import type { LifeQuote } from '~/data/quotes'
 
-const { profile, stats, init, now } = useAppState()
+const { profile, stats, init, now, setProfile } = useAppState()
 
 // 短寿命(0岁/不足1年)时返回替代文案,否则 null 沿用"活到 X 岁"默认措辞
 const shortText = computed(() => (profile.value ? shortLifeText(profile.value) : null))
@@ -214,6 +278,134 @@ const todayLabel = computed(() => {
 const streak = computed(() => (profile.value ? streakDays(profile.value) : 0))
 
 const timeline = computed<TimelineItem[]>(() => (profile.value ? buildTimeline(profile.value) : []))
+
+// ---- 自定义时间线节点 ----
+const customYear = ref<number>()
+const customText = ref('')
+const customNodeError = ref('')
+
+// 年份输入实时修正:过滤小数/符号,并实时纠正超过最大值的输入。
+// 注意:不做下限(minYear)的实时 clamp,否则输入中间值(如把 2003 删改成 1999 时的 "20")会被
+// 立即纠正回最小值,导致无法编辑。下限在添加时(addCustomNode)统一校验。
+function onYearInput(e: Event) {
+  const input = e.target as HTMLInputElement
+  const cleaned = input.value.replace(/[^0-9]/g, '')
+  let val = cleaned === '' ? undefined : parseInt(cleaned, 10)
+  if (val !== undefined) {
+    // 仅实时纠正超过最大值
+    if (val > maxYear.value) val = maxYear.value
+    const corrected = String(val)
+    if (input.value !== corrected) {
+      input.value = corrected
+    }
+  } else if (input.value !== '') {
+    input.value = ''
+  }
+  customYear.value = val
+}
+
+// 时间线年份下限:出生年份 + 1(必须晚于出生)
+const minYear = computed(() => {
+  if (!profile.value) return 0
+  return birthMoment(profile.value.birthDate, profile.value.birthTime).getFullYear() + 1
+})
+// 时间线年份上限:人生结束(寿命终点)的年份
+const maxYear = computed(() => {
+  if (!profile.value) return 9999
+  const birth = birthMoment(profile.value.birthDate, profile.value.birthTime)
+  const end = new Date(birth.getTime() + lifespanMs(profile.value))
+  return end.getFullYear()
+})
+
+function addCustomNode() {
+  if (!profile.value) return
+  const yearRaw = customYear.value
+  if (yearRaw === undefined || yearRaw === null || Number.isNaN(yearRaw) || !yearRaw) {
+    customNodeError.value = '请输入年份'
+    return
+  }
+  if (!Number.isInteger(yearRaw)) {
+    customNodeError.value = '年份必须是整数'
+    return
+  }
+  const year = yearRaw
+  const text = customText.value.trim()
+  if (year < minYear.value) {
+    customNodeError.value = `年份必须大于出生年份 ${minYear.value - 1} 年`
+    return
+  }
+  if (year > maxYear.value) {
+    customNodeError.value = `年份不能超过 ${maxYear.value} 年(人生结束年份)`
+    return
+  }
+  if (text.length > 30) {
+    customNodeError.value = '内容不能超过 30 字'
+    return
+  }
+  const items = [...(profile.value.customTimeline ?? [])]
+  const idx = items.findIndex((i) => i.year === year)
+  if (idx >= 0) {
+    // 同一年份:覆盖之前的内容
+    items[idx] = { year, text }
+  } else {
+    items.push({ year, text })
+  }
+  setProfile({ ...profile.value, customTimeline: items })
+  customYear.value = undefined
+  customText.value = ''
+  customNodeError.value = ''
+}
+
+// 删除节点:自定义节点直接移除;预估/现在节点记录年份,下次生成时跳过(出生除外)
+function removeNode(item: TimelineItem) {
+  if (!profile.value) return
+  if (item.custom) {
+    const items = (profile.value.customTimeline ?? []).filter((i) => i.year !== item.year)
+    setProfile({ ...profile.value, customTimeline: items })
+  } else {
+    const del = [...new Set([...(profile.value.timelineDeleted ?? []), item.year])]
+    setProfile({ ...profile.value, timelineDeleted: del })
+  }
+}
+
+// 双击修改节点:正在编辑的年份与内容
+const editingYear = ref<number | null>(null)
+const editingText = ref('')
+
+// 自定义指令:元素挂载(进入编辑)时自动聚焦
+const vFocus = {
+  mounted: (el: HTMLElement) => el.focus(),
+}
+
+function startEdit(item: TimelineItem) {
+  editingYear.value = item.year
+  editingText.value = item.label
+}
+
+// 保存修改:统一转为自定义节点(覆盖预估节点)
+function saveEdit() {
+  if (editingYear.value == null || !profile.value) return
+  const text = editingText.value.trim()
+  if (text.length > 30) {
+    // 超出上限:截断保存,避免超长文字破坏布局
+    editingText.value = text.slice(0, 30)
+    return
+  }
+  const year = editingYear.value
+  const items = [...(profile.value.customTimeline ?? [])]
+  const idx = items.findIndex((i) => i.year === year)
+  if (idx >= 0) {
+    items[idx] = { year, text }
+  } else {
+    items.push({ year, text })
+  }
+  setProfile({ ...profile.value, customTimeline: items })
+  editingYear.value = null
+}
+
+function cancelEdit() {
+  editingYear.value = null
+}
 
 // 时分秒(两位数,用于翻页)
 const timeUnits = computed(() => {

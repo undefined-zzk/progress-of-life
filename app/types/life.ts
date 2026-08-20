@@ -15,6 +15,10 @@ export interface UserProfile {
   lifeExpectancy: number
   // 精确假设寿命(毫秒,可选;自定义时分秒时使用,兼容旧数据回退到 lifeExpectancy)
   lifeExpectancyMs?: number
+  // 自定义时间线节点(用户自填的事件)
+  customTimeline?: CustomTimelineItem[]
+  // 被删除的预估节点年份(出生除外)
+  timelineDeleted?: number[]
   // 元数据
   createdAt: string // 首次创建时间 ISO
   lastSeenAt: string // 最近访问时间 ISO
@@ -94,4 +98,12 @@ export interface TimelineItem {
   year: number
   label: string
   type: 'past' | 'now' | 'future' | 'milestone'
+  // 自定义节点标记
+  custom?: boolean
+}
+
+// 用户自定义的时间线节点(自填未来事件)
+export interface CustomTimelineItem {
+  year: number
+  text: string
 }

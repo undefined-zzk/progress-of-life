@@ -25,7 +25,7 @@ function parseBirthTime(bt: string | null | undefined): [number, number] {
 }
 
 /** 出生时刻(含出生时间时分,未填则 00:00) */
-function birthMoment(birthDate: string, birthTime?: string | null): Date {
+export function birthMoment(birthDate: string, birthTime?: string | null): Date {
   const [h, m] = parseBirthTime(birthTime)
   const d = new Date(birthDate)
   d.setHours(h, m, 0, 0)
@@ -217,8 +217,8 @@ export function computeSimulation(profile: UserProfile, input: SimulationInput, 
 }
 
 /**
- * 根据出生日期生成人生时间线(过去 + 现在 + 未来的年龄阶段示意)。
- * 未来节点仅为基于年龄阶段的示意,不代表真实预测。
+ * 根据出生日期生成人生时间线(过去 + 现在 + 未来的年龄阶段预估 + 用户自定义)。
+ * 出生为固定锚点;过去/未来的自动节点为基于年龄阶段的预估示意,可与用户自定义节点并存。
  */
 export function buildTimeline(profile: UserProfile, now: Date = new Date()): TimelineItem[] {
   const birth = birthMoment(profile.birthDate, profile.birthTime)
@@ -226,10 +226,11 @@ export function buildTimeline(profile: UserProfile, now: Date = new Date()): Tim
   const currentYear = now.getFullYear()
   const currentAge = Math.floor(preciseAge(birth, now))
 
-  const items: TimelineItem[] = []
-  // 过去的关键节点(基于年龄阶段的典型事件,非真实预测)
+  // 出生(固定锚点)
+  const items: TimelineItem[] = [{ year: birthYear, label: '出生', type: 'milestone' }]
+
+  // 过去的预估节点(基于年龄阶段的典型事件)
   const pastMilestones: Array<[number, string]> = [
-    [0, '出生'],
     [6, '开始上学'],
     [18, '成年'],
     [22, '大学毕业'],
@@ -237,14 +238,14 @@ export function buildTimeline(profile: UserProfile, now: Date = new Date()): Tim
   for (const [ageAt, label] of pastMilestones) {
     const y = birthYear + ageAt
     if (ageAt <= currentAge) {
-      items.push({ year: y, label, type: ageAt === 0 ? 'milestone' : 'past' })
+      items.push({ year: y, label, type: 'past' })
     }
   }
 
   // 现在
   items.push({ year: currentYear, label: '现在', type: 'now' })
 
-  // 未来(每 10 年一个节点)
+  // 未来的预估节点(每 10 年一个节点)
   const nextDecade = Math.ceil((currentAge + 1) / 10) * 10
   for (let ageAt = nextDecade; ageAt <= profile.lifeExpectancy; ageAt += 10) {
     const isEnd = ageAt === profile.lifeExpectancy
@@ -255,7 +256,24 @@ export function buildTimeline(profile: UserProfile, now: Date = new Date()): Tim
     })
   }
 
-  return items.sort((a, b) => a.year - b.year)
+  // 合并用户自定义的时间线节点(自填的过去/未来事件)
+  // 当前年份的自定义节点按"现在"处理(高亮),其余按"未来"处理。
+  const customs = (profile.customTimeline ?? []).map((c) => ({
+    year: c.year,
+    label: c.text,
+    type: (c.year === currentYear ? 'now' : 'future') as const,
+    custom: true,
+  }))
+  // 出生为固定锚点,保留;其余预估节点若被删除或被自定义覆盖,则跳过。
+  const customYears = new Set((profile.customTimeline ?? []).map((c) => c.year))
+  const deletedSet = new Set(profile.timelineDeleted ?? [])
+  const merged = items.filter((it) => {
+    if (it.label === '出生') return true
+    return !deletedSet.has(it.year) && !customYears.has(it.year)
+  })
+  merged.push(...customs)
+
+  return merged.sort((a, b) => a.year - b.year)
 }
 
 /** 数字千分位格式化 */

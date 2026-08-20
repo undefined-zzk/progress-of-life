@@ -100,8 +100,6 @@
       <div v-if="result.phoneSaved.perDay === 0 && input.learnHours === 0 && input.exerciseHours === 0" class="card p-8 text-center">
         <p class="text-sub leading-relaxed">拖动上方的滑块,试试改变你的习惯。</p>
       </div>
-
-      <p class="text-xs text-sub text-center">以上均为基于假设寿命的估算,不构成任何预测。</p>
     </div>
   </div>
 

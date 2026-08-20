@@ -24,6 +24,7 @@ const el = ref<HTMLElement | null>(null)
 const animatedPercent = ref(0)
 
 const { gsap, ScrollTrigger } = useGSAP()
+let trigger: ScrollTrigger | null = null
 
 onMounted(() => {
   if (!el.value) return
@@ -37,9 +38,12 @@ onMounted(() => {
       animatedPercent.value = obj.p
     },
   })
+  // 记录本组件创建的触发器,卸载时只清理自己的,避免误伤其他组件的 ScrollTrigger
+  const all = ScrollTrigger.getAll()
+  trigger = all[all.length - 1] ?? null
 })
 
 onUnmounted(() => {
-  ScrollTrigger.getAll().forEach((t) => t.kill())
+  trigger?.kill()
 })
 </script>

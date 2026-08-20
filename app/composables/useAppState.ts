@@ -17,10 +17,18 @@ export function useAppState() {
   /** 初始化:从 LocalStorage 加载资料(仅客户端) */
   function init(): void {
     if (import.meta.server) return
+    // profile 已存在则无需重复加载
+    if (profile.value) return
     const loaded = store.loadProfile()
     if (loaded) {
       profile.value = store.recordVisit(loaded)
     }
+  }
+
+  // 客户端每次引用状态时,若 profile 为空则按需从 LocalStorage 恢复。
+  // 避免 SPA 导航(跳转 life 后再返回首页)时 profile 意外为 null 导致内容消失。
+  if (!import.meta.server) {
+    init()
   }
 
   /** 设置资料(保存并触发重新计算) */

@@ -11,7 +11,7 @@
           <label class="font-medium">每天刷手机</label>
           <span class="display-number font-semibold text-primary">{{ input.phoneHours }} 小时</span>
         </div>
-        <input v-model.number="input.phoneHours" type="range" min="0" max="12" step="0.5" class="w-full accent-primary" />
+        <input v-model.number="input.phoneHours" type="range" min="0" max="24" step="0.5" class="w-full accent-primary" />
         <p class="text-xs text-sub mt-1">当前习惯:{{ profile.phoneHours }} 小时/天</p>
       </div>
 
@@ -21,7 +21,8 @@
           <label class="font-medium">每天学习</label>
           <span class="display-number font-semibold text-primary">{{ input.learnHours }} 小时</span>
         </div>
-        <input v-model.number="input.learnHours" type="range" min="0" max="6" step="0.5" class="w-full accent-primary" />
+        <input v-model.number="input.learnHours" type="range" min="0" max="24" step="0.5" class="w-full accent-primary" />
+        <p class="text-xs text-sub mt-1">当前习惯:{{ currentLearnHours }} 小时/天</p>
       </div>
 
       <!-- 运动时间 -->
@@ -30,14 +31,15 @@
           <label class="font-medium">每周运动</label>
           <span class="display-number font-semibold text-primary">{{ input.exerciseHours }} 小时</span>
         </div>
-        <input v-model.number="input.exerciseHours" type="range" min="0" max="14" step="0.5" class="w-full accent-primary" />
+        <input v-model.number="input.exerciseHours" type="range" min="0" max="168" step="0.5" class="w-full accent-primary" />
+        <p class="text-xs text-sub mt-1">当前习惯:{{ currentExerciseHours }} 小时/周</p>
       </div>
     </div>
 
     <!-- 结果区 -->
     <div v-if="result" class="mt-10 space-y-6">
-      <!-- 少刷手机 -->
-      <div class="card p-8">
+      <!-- 少刷手机:仅当确实有节省时显示 -->
+      <div v-if="result.phoneSaved.perDay > 0" class="card p-8">
         <h2 class="text-lg font-semibold mb-6">如果每天少刷 {{ result.phoneSaved.perDay.toFixed(1) }} 小时手机</h2>
         <div class="grid grid-cols-2 gap-4">
           <div class="p-4 rounded-xl bg-bg dark:bg-bg-dark">
@@ -55,8 +57,17 @@
         </p>
       </div>
 
-      <!-- 学习 -->
-      <div class="card p-8">
+      <!-- 多刷手机的提示:当目标值高于当前习惯 -->
+      <div v-else-if="result.phoneSaved.perDay === 0 && input.phoneHours > profile.phoneHours" class="card p-8">
+        <h2 class="text-lg font-semibold mb-2">你把手机时间调高了</h2>
+        <p class="text-sub leading-relaxed">
+          当前习惯是 {{ profile.phoneHours }} 小时/天,你设置了 {{ input.phoneHours }} 小时。
+          尝试把滑块调低,看看能为自己省下多少时间。
+        </p>
+      </div>
+
+      <!-- 学习:仅当有学习时间时显示意义 -->
+      <div v-if="input.learnHours > 0" class="card p-8">
         <h2 class="text-lg font-semibold mb-6">如果每天学习 {{ input.learnHours }} 小时</h2>
         <div class="grid grid-cols-2 gap-4">
           <div class="p-4 rounded-xl bg-bg dark:bg-bg-dark">
@@ -70,8 +81,8 @@
         </div>
       </div>
 
-      <!-- 运动 -->
-      <div class="card p-8">
+      <!-- 运动:仅当有运动时间时显示意义 -->
+      <div v-if="input.exerciseHours > 0" class="card p-8">
         <h2 class="text-lg font-semibold mb-6">如果每周运动 {{ input.exerciseHours }} 小时</h2>
         <div class="grid grid-cols-2 gap-4">
           <div class="p-4 rounded-xl bg-bg dark:bg-bg-dark">
@@ -83,6 +94,11 @@
             <p class="display-number text-2xl font-bold"><AnimatedNumber :value="result.exercise.perLifetime" /> 小时</p>
           </div>
         </div>
+      </div>
+
+      <!-- 三项均为 0 的兜底 -->
+      <div v-if="result.phoneSaved.perDay === 0 && input.learnHours === 0 && input.exerciseHours === 0" class="card p-8 text-center">
+        <p class="text-sub leading-relaxed">拖动上方的滑块,试试改变你的习惯。</p>
       </div>
 
       <p class="text-xs text-sub text-center">以上均为基于假设寿命的估算,不构成任何预测。</p>
@@ -100,26 +116,52 @@
 
 <script setup lang="ts">
 // simulator:人生模拟器,实时计算"如果改变习惯会怎样"
-import { reactive, computed } from 'vue'
+import { reactive, computed, watch } from 'vue'
 import { computeSimulation } from '~/utils/life'
 
 const { profile, now } = useAppState()
 
 const input = reactive({
-  phoneHours: 2, // 默认建议少刷到 2 小时
-  learnHours: 1,
-  exerciseHours: 3,
+  phoneHours: 0,
+  learnHours: 0,
+  exerciseHours: 0,
 })
 
-// 初始化手机输入为当前习惯(若有)
-watchEffect(() => {
-  if (profile.value && input.phoneHours === 2) {
-    input.phoneHours = Math.max(0, profile.value.phoneHours - 1)
-  }
-})
+// 当前习惯(用于展示对比)。学习时间 profile 未存,默认按 0 显示。
+const currentLearnHours = computed(() => 0)
+const currentExerciseHours = computed(() => profile.value?.exerciseHours ?? 0)
+
+// profile 就绪时一次性初始化各滑块为"略优于当前习惯"的建议值,
+// 用 watch + once 标志,避免 watchEffect 反复触发、覆盖用户后续的手动调整。
+let inited = false
+watch(
+  profile,
+  (p) => {
+    if (!p || inited) return
+    inited = true
+    // 手机:建议比当前少 1 小时,但不低于 0
+    input.phoneHours = Math.max(0, +(p.phoneHours - 1).toFixed(1))
+    // 学习:默认 1 小时(无当前习惯可对比)
+    input.learnHours = 1
+    // 运动:沿用当前习惯作为起点,便于看"如果增加会怎样"
+    input.exerciseHours = p.exerciseHours ?? 3
+  },
+  { immediate: true },
+)
 
 const result = computed(() => {
   if (!profile.value) return null
-  return computeSimulation(profile.value, input, new Date(now.value))
+  // clamp 防止边界(NaN / 越界)传入计算引擎
+  const safeInput = {
+    phoneHours: clamp(input.phoneHours, 0, 24),
+    learnHours: clamp(input.learnHours, 0, 24),
+    exerciseHours: clamp(input.exerciseHours, 0, 168),
+  }
+  return computeSimulation(profile.value, safeInput, new Date(now.value))
 })
+
+function clamp(n: unknown, min: number, max: number): number {
+  const v = typeof n === 'number' && !Number.isNaN(n) ? n : 0
+  return Math.min(max, Math.max(min, v))
+}
 </script>

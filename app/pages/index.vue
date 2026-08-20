@@ -6,24 +6,31 @@
       <div v-if="profile && stats" class="fss-inner text-center px-6">
         <p class="hero-eyebrow text-sm text-sub mb-8 tracking-[0.4em]">MY LIFE · 人生进度</p>
         <p class="text-lg text-sub mb-3">今天是你人生的</p>
-        <p class="display-number text-[clamp(4rem,16vw,12rem)] font-bold text-primary leading-none tracking-tight">
+        <p class="display-number text-[clamp(3rem,11vw,8rem)] font-bold text-primary leading-none tracking-tight">
           {{ stats.daysLived.toLocaleString('en-US') }}
         </p>
         <p class="text-2xl text-sub mt-3">天</p>
 
-        <!-- 实时倒计时(翻页时钟) -->
-        <div class="mt-12 flex items-start justify-center gap-3 sm:gap-5">
-          <template v-for="(u, idx) in countdownUnits" :key="idx">
+        <!-- 实时倒计时(天 + 翻页时分秒) -->
+        <div class="mt-8 flex items-end justify-center gap-3 sm:gap-5">
+          <!-- 天:翻页卡片(与时分秒统一) -->
+          <div class="text-center">
+            <FlipClock :value="stats.countdown.days" size="xl" />
+            <span class="block text-sm text-sub mt-2">天</span>
+          </div>
+          <span class="text-5xl sm:text-7xl text-sub card-colon">:</span>
+          <!-- 时/分/秒:翻页 -->
+          <template v-for="(u, idx) in timeUnits" :key="idx">
             <div class="text-center">
-              <FlipClock :value="u.value" size="md" class="text-3xl sm:text-5xl" />
-              <span class="block text-sm text-sub mt-2">{{ u.label }}</span>
+              <FlipClock :value="u" size="xl" />
+              <span class="block text-sm text-sub mt-2">{{ timeLabels[idx] }}</span>
             </div>
-            <span v-if="idx < countdownUnits.length - 1" class="text-2xl sm:text-4xl text-sub pt-2">:</span>
+            <span v-if="idx < timeUnits.length - 1" class="text-5xl sm:text-7xl text-sub card-colon">:</span>
           </template>
         </div>
         <p class="mt-8 text-sm text-sub">如果活到 {{ profile.lifeExpectancy }} 岁,还有大约这些时间</p>
 
-        <div class="mt-12 flex flex-col sm:flex-row items-center justify-center gap-5 hero-cta">
+        <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-5 hero-cta">
           <NuxtLink
             to="/life"
             class="inline-flex items-center justify-center px-12 py-5 rounded-full bg-primary text-white font-medium text-xl hover:bg-primary-deep transition-all hover:scale-[1.03] active:scale-[0.98]"
@@ -56,9 +63,9 @@
       </div>
 
       <!-- 底部滚动提示 -->
-      <div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-sub">
+      <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-sub">
         <span class="text-xs tracking-widest">SCROLL</span>
-        <span class="scroll-line block w-px h-10 bg-line overflow-hidden">
+        <span class="scroll-line block w-px h-8 bg-line overflow-hidden">
           <span class="block w-full h-1/2 bg-primary animate-scroll"></span>
         </span>
       </div>
@@ -136,17 +143,14 @@ onMounted(() => {
 
 const navLabels = ['开始', '核心理念', '你会看到什么', '隐私承诺']
 
-// 实时倒计时单位
-const countdownUnits = computed(() => {
+// 时分秒(两位数,用于翻页)
+const timeUnits = computed(() => {
   if (!stats.value) return []
   const c = stats.value.countdown
-  return [
-    { value: c.days.toLocaleString('en-US'), label: '天' },
-    { value: pad(c.hours), label: '时' },
-    { value: pad(c.minutes), label: '分' },
-    { value: pad(c.seconds), label: '秒' },
-  ]
+  return [pad(c.hours), pad(c.minutes), pad(c.seconds)]
 })
+
+const timeLabels = ['时', '分', '秒']
 
 function pad(n: number): string {
   return String(n).padStart(2, '0')
@@ -164,5 +168,19 @@ function pad(n: number): string {
 }
 .animate-scroll {
   animation: scrollHint 1.8s ease-in-out infinite;
+}
+
+/* 让"天/时/分/秒"之间的":"垂直居中对齐到翻页卡片中心(xl 尺寸)
+   容器为 items-end(卡片+标签底部对齐),":" 需上抬到卡片中心:
+   xl 卡片半高(4.25rem) + 标签区(mt-2 0.5rem + text-sm 行高约1.25rem) - ":" 字体半高 */
+.card-colon {
+  position: relative;
+  margin-bottom: 4.75rem;
+}
+
+@media (min-width: 640px) {
+  .card-colon {
+    margin-bottom: 5rem;
+  }
 }
 </style>

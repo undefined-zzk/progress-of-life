@@ -47,6 +47,13 @@ let ctx: gsap.Context | null = null
 onMounted(() => {
   if (!root.value) return
 
+  // SPA 导航返回本页时,滚动位置可能停留在离开时的高位,
+  // 会导致 ScrollTrigger 触发点计算错位、面板停在 autoAlpha:0 不显示。
+  // 先回到顶部,再创建触发器,保证初始状态一致。
+  if (window.scrollY > 0) {
+    window.scrollTo(0, 0)
+  }
+
   ctx = gsap.context(() => {
     const panels = gsap.utils.toArray<HTMLElement>('.fss-panel', root.value)
 
@@ -131,27 +138,18 @@ onMounted(() => {
       })
     })
 
-    // 整屏吸附:滚动结束后吸附到最近的屏,带弹性回弹增强冲击感
-    ScrollTrigger.create({
-      trigger: root.value,
-      start: 'top top',
-      end: 'bottom bottom',
-      snap: {
-        snapTo: (value) => {
-          const count = panels.length
-          if (count <= 1) return value
-          const step = 1 / (count - 1)
-          return Math.round(value / step) * step
-        },
-        duration: { min: 0.4, max: 0.9 },
-        ease: 'power3.inOut',
-        delay: 0.1,
-      },
-    })
+    // 整屏吸附已取消:滚动自由停留,不再自动回弹到最近一屏
+    // (保留导航点高亮与进入动画,仅移除 snap 回弹)
   }, root.value)
 
   // 等待图片/字体加载后刷新触发位置
-  requestAnimationFrame(() => ScrollTrigger.refresh())
+  // SPA 导航返回时一帧 RAF 通常不足以让布局稳定,ScrollTrigger 位置会算错,
+  // 面板停留在 autoAlpha:0 表现为"内容不显示"。用双 RAF + 延迟兜底刷新。
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      ScrollTrigger.refresh()
+    })
+  })
 })
 
 onUnmounted(() => {

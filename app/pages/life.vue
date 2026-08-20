@@ -33,13 +33,20 @@
       <div class="fss-inner text-center px-6">
         <p class="text-sm text-sub tracking-[0.3em] mb-8">实时倒计时</p>
         <p class="text-xl sm:text-2xl text-sub mb-12">如果活到 {{ profile.lifeExpectancy }} 岁,还有大约</p>
-        <div class="flex items-start justify-center gap-3 sm:gap-5">
-          <template v-for="(u, idx) in countdownUnits" :key="idx">
+        <div class="flex items-end justify-center gap-3 sm:gap-5">
+          <!-- 天:翻页卡片(与首页统一) -->
+          <div class="text-center">
+            <FlipClock :value="stats.countdown.days" size="xl" />
+            <span class="block text-sm sm:text-base text-sub mt-3">天</span>
+          </div>
+          <span class="text-5xl sm:text-7xl text-sub card-colon">:</span>
+          <!-- 时/分/秒:翻页 -->
+          <template v-for="(u, idx) in timeUnits" :key="idx">
             <div class="text-center">
-              <FlipClock :value="u.value" size="lg" class="text-4xl sm:text-6xl" />
-              <span class="block text-sm sm:text-base text-sub mt-3">{{ u.label }}</span>
+              <FlipClock :value="u" size="xl" />
+              <span class="block text-sm sm:text-base text-sub mt-3">{{ timeLabels[idx] }}</span>
             </div>
-            <span v-if="idx < countdownUnits.length - 1" class="text-3xl sm:text-5xl text-sub pt-3">:</span>
+            <span v-if="idx < timeUnits.length - 1" class="text-5xl sm:text-7xl text-sub card-colon">:</span>
           </template>
         </div>
       </div>
@@ -49,13 +56,13 @@
     <section class="fss-panel">
       <div class="fss-inner w-full max-w-4xl px-6">
         <p class="text-sm text-sub tracking-[0.3em] mb-6 text-center">你还可能拥有</p>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-5">
+        <div class="grid grid-cols-2 xl:grid-cols-4 gap-5">
           <div
             v-for="item in remainingEvents"
             :key="item.key"
             class="card p-5 sm:p-8 text-center overflow-hidden"
           >
-            <p class="display-number font-bold text-primary text-[clamp(1.75rem,6vw,3.75rem)] leading-none">
+            <p class="display-number font-bold text-primary text-[clamp(1.5rem,5vw,3rem)] leading-none">
               <AnimatedNumber :value="item.value" />
             </p>
             <p class="text-sm text-sub mt-3">{{ item.label }}</p>
@@ -148,11 +155,15 @@
 // life:全屏滚动的核心页面
 definePageMeta({ layout: 'immersive' })
 
+import { onMounted } from 'vue'
 import type { TimelineItem } from '~/types/life'
 import { buildTimeline, formatPercent } from '~/utils/life'
 
-const { profile, stats } = useAppState()
+const { profile, stats, init } = useAppState()
 const { streakDays } = useLifeStore()
+
+// 双保险:进入页面时确保资料已从 LocalStorage 恢复
+onMounted(() => init())
 
 const navLabels = ['第几天', '人生进度', '倒计时', '剩余事件', '时间分配', '时间线', '今天']
 
@@ -168,17 +179,14 @@ const streak = computed(() => (profile.value ? streakDays(profile.value) : 0))
 
 const timeline = computed<TimelineItem[]>(() => (profile.value ? buildTimeline(profile.value) : []))
 
-// 实时倒计时单位
-const countdownUnits = computed(() => {
+// 时分秒(两位数,用于翻页)
+const timeUnits = computed(() => {
   if (!stats.value) return []
   const c = stats.value.countdown
-  return [
-    { value: c.days.toLocaleString('en-US'), label: '天' },
-    { value: pad(c.hours), label: '时' },
-    { value: pad(c.minutes), label: '分' },
-    { value: pad(c.seconds), label: '秒' },
-  ]
+  return [pad(c.hours), pad(c.minutes), pad(c.seconds)]
 })
+
+const timeLabels = ['时', '分', '秒']
 
 // 剩余事件(周末/夏天/生日/日落)
 const remainingEvents = computed(() => {
@@ -214,3 +222,18 @@ function pad(n: number): string {
   return String(n).padStart(2, '0')
 }
 </script>
+
+<style scoped>
+/* 与首页统一:让"天/时/分/秒"之间的":"垂直居中对齐到翻页卡片中心(xl 尺寸)
+   容器为 items-end(卡片+标签底部对齐),":" 需上抬到卡片中心 */
+.card-colon {
+  position: relative;
+  margin-bottom: 4.75rem;
+}
+
+@media (min-width: 640px) {
+  .card-colon {
+    margin-bottom: 5rem;
+  }
+}
+</style>

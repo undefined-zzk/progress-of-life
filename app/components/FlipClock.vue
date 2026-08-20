@@ -1,167 +1,311 @@
 <template>
   <div class="flip-group" :class="`flip-group--${size}`">
-    <span
-      v-for="(digit, i) in digits"
+    <div
+      v-for="(digit, i) in display"
       :key="i"
-      class="flip-card"
-      :class="{ 'is-flipping': isFlipping(i) }"
+      class="flip"
+      :class="{ play: changing[i] }"
     >
-      <!-- 上半:当前数字(前面) -->
-      <span class="flip-card__half flip-card__half--top-front">{{ digit }}</span>
-      <!-- 下半:当前数字(前面) -->
-      <span class="flip-card__half flip-card__half--bottom-front">{{ prevDigits[i] ?? digit }}</span>
-      <!-- 上半:新数字(背面,翻下来) -->
-      <span class="flip-card__half flip-card__half--top-back">{{ digit }}</span>
-      <!-- 下半:新数字(背面,接续翻) -->
-      <span class="flip-card__half flip-card__half--bottom-back">{{ prevDigits[i] ?? digit }}</span>
-    </span>
+      <!-- 0~9 全部渲染,只有 before / active 参与翻页 -->
+      <div
+        v-for="n in 10"
+        :key="n"
+        class="item"
+        :class="{
+          before: changing[i] && n - 1 === Number(beforeDigits[i]),
+          active: n - 1 === Number(digit),
+        }"
+      >
+        <div class="up">
+          <div class="shadow"></div>
+          <div class="inn">{{ n - 1 }}</div>
+        </div>
+        <div class="down">
+          <div class="shadow"></div>
+          <div class="inn">{{ n - 1 }}</div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-// 翻页时钟:翻日历式翻牌数字(参考经典 FlipClock 四面板结构)
+// 翻页时钟:复刻 newcodercircle/front-demo-training 的纯 CSS 翻页倒计时
+// 机制:每个数字卡片渲染 0~9 全部 item;active 始终是新值,正常显示;
+//      变化时:beforeDigits 记录旧值,额外给对应旧 item 加 .before 类,
+//      同时加 .play 触发 CSS 动画;动画结束后清除 before,恢复正常状态。
 const props = withDefaults(
   defineProps<{
     value: number | string
-    size?: 'sm' | 'md' | 'lg'
+    size?: 'sm' | 'md' | 'lg' | 'xl'
   }>(),
   { size: 'md' },
 )
 
-const digits = ref<string[]>([])
-const prevDigits = ref<string[]>([])
-const flippingSet = ref<Set<number>>(new Set())
+// display: 当前值(始终跟随 props.value)
+const display = ref<string[]>([])
+// beforeDigits: 翻页期间记录旧值;非翻页期间为 '-1' 表示没有 before
+const beforeDigits = ref<string[]>([])
+const changing = ref<boolean[]>([])
+
+const timers = new Map<number, ReturnType<typeof setTimeout>>()
 
 function toDigits(v: number | string): string[] {
   return String(v).split('')
-}
-
-function isFlipping(i: number): boolean {
-  return flippingSet.value.has(i)
 }
 
 watch(
   () => props.value,
   (newVal) => {
     const next = toDigits(newVal)
-    const cur = digits.value
+    const cur = display.value
 
-    // 首次或位数变化:直接显示,不翻页
     if (cur.length === 0 || next.length !== cur.length) {
-      digits.value = next
-      prevDigits.value = [...next]
+      display.value = next
+      beforeDigits.value = next.map(() => '-1')
+      changing.value = next.map(() => false)
       return
     }
 
-    if (next.join('') === cur.join('')) return
+    const changed = next.map((d, i) => d !== cur[i])
+    if (!changed.some(Boolean)) return
 
-    // 标记变化的位,触发翻页动画
-    const changed = new Set<number>()
-    next.forEach((d, i) => {
-      if (d !== cur[i]) changed.add(i)
+    // 动画前:记录旧值作为 before;active 立即更新为新值
+    beforeDigits.value = cur.map((d, i) => (changed[i] ? d : '-1'))
+    changing.value = changed
+    display.value = next
+
+    // 动画结束后清除该位的 before
+    next.forEach((_, i) => {
+      if (!changed[i]) return
+      if (timers.has(i)) clearTimeout(timers.get(i)!)
+      timers.set(
+        i,
+        setTimeout(() => {
+          beforeDigits.value[i] = '-1'
+          changing.value[i] = false
+          timers.delete(i)
+        }, 1000),
+      )
     })
-    flippingSet.value = changed
-
-    // 记录旧值
-    prevDigits.value = [...cur]
-
-    // 翻页动画结束后,更新为最终值并清除翻转状态
-    setTimeout(() => {
-      digits.value = next
-      prevDigits.value = [...next]
-      flippingSet.value = new Set()
-    }, 600)
   },
   { immediate: true },
 )
+
+onUnmounted(() => {
+  timers.forEach((t) => clearTimeout(t))
+  timers.clear()
+})
 </script>
 
 <style scoped>
 .flip-group {
   display: inline-flex;
-  gap: 0.2em;
-  perspective: 600px;
+  align-items: center;
+  --width: 3rem;
+  --height: 4.5rem;
+  --fontSize: 3.4rem;
+  --lineWidth: 2px;
+  --radius: 6px;
+  --bg: var(--color-primary);
+  --text: #fff;
 }
 
-.flip-card {
+.flip-group--sm {
+  --width: 2rem;
+  --height: 3rem;
+  --fontSize: 2.3rem;
+}
+
+.flip-group--md {
+  --width: 3rem;
+  --height: 4.5rem;
+  --fontSize: 3.4rem;
+}
+
+.flip-group--lg {
+  --width: 4rem;
+  --height: 6.5rem;
+  --fontSize: 4.8rem;
+}
+
+.flip-group--xl {
+  --width: 5.2rem;
+  --height: 8.5rem;
+  --fontSize: 6.4rem;
+}
+
+.flip {
   position: relative;
-  display: inline-block;
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
-  font-weight: 700;
-  color: #fff;
-  background: var(--color-primary);
-  border-radius: 0.2em;
-  line-height: 1;
-  height: 1.1em;
-  overflow: hidden;
+  margin: 0 2px;
+  width: var(--width);
+  height: var(--height);
+  font-size: var(--fontSize);
+  font-weight: bold;
+  line-height: calc(var(--height) - var(--lineWidth));
+  border-radius: var(--radius);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.3);
 }
 
-/* 尺寸档位 */
-.flip-group--sm .flip-card { font-size: 1.25rem; min-width: 0.8em; }
-.flip-group--md .flip-card { font-size: 2rem; min-width: 0.9em; }
-.flip-group--lg .flip-card { font-size: 3rem; min-width: 1em; }
+.flip .item {
+  z-index: 1;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  perspective: 200px;
+  transition: opacity 0.3s;
+}
 
-/* 四个半页面板 */
-.flip-card__half {
+.flip .item.active {
+  z-index: 2;
+}
+
+.flip .item:first-child {
+  z-index: 2;
+}
+
+.flip .item .up,
+.flip .item .down {
+  z-index: 1;
   position: absolute;
   left: 0;
   width: 100%;
   height: 50%;
   overflow: hidden;
-  text-align: center;
   backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
-/* 上半前面:当前数字上半 */
-.flip-card__half--top-front {
+.flip .item .up {
+  transform-origin: 50% 100%;
   top: 0;
-  line-height: 1.1em;
-  z-index: 1;
 }
 
-/* 下半前面:当前数字下半 */
-.flip-card__half--bottom-front {
+/* 中缝分割线 */
+.flip .item .up:after {
+  content: '';
+  position: absolute;
+  top: calc((var(--height) - var(--lineWidth)) / 2);
+  left: 0;
+  z-index: 5;
+  width: 100%;
+  height: var(--lineWidth);
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+.flip .item .down {
+  transform-origin: 50% 0%;
   bottom: 0;
-  line-height: 0;
-  padding-top: 0.55em;
-  z-index: 1;
+  transition: opacity 0.3s;
 }
 
-/* 上半背面:新数字上半(初始背对,翻页时翻下来) */
-.flip-card__half--top-back {
+.flip .item .inn {
+  position: absolute;
+  left: 0;
+  z-index: 1;
+  width: 100%;
+  height: 200%;
+  color: var(--text);
+  text-align: center;
+  background-color: var(--bg);
+  border-radius: var(--radius);
+}
+
+.flip .item .up .inn {
   top: 0;
-  line-height: 1.1em;
-  transform: rotateX(180deg);
-  transform-origin: bottom center;
-  z-index: 2;
 }
 
-/* 下半背面:新数字下半(初始背对) */
-.flip-card__half--bottom-back {
+.flip .item .down .inn {
   bottom: 0;
-  line-height: 0;
-  padding-top: 0.55em;
-  transform: rotateX(180deg);
-  transform-origin: top center;
+}
+
+/* ===== 翻页动画(纯 CSS) ===== */
+.play .item.before {
   z-index: 3;
 }
 
-/* 翻页动画 */
-.flip-card.is-flipping .flip-card__half--top-back {
-  animation: flip-top 0.6s ease-in forwards;
-}
-.flip-card.is-flipping .flip-card__half--bottom-back {
-  animation: flip-bottom 0.6s ease-out 0.3s forwards;
+.play .item.active {
+  animation: asd 0.5s 0.5s linear both;
+  z-index: 2;
 }
 
-@keyframes flip-top {
-  from { transform: rotateX(180deg); }
-  to { transform: rotateX(0deg); }
+.play .item.before .up {
+  z-index: 2;
+  animation: turn-up 0.5s linear both;
 }
 
-@keyframes flip-bottom {
-  from { transform: rotateX(180deg); }
-  to { transform: rotateX(0deg); }
+.play .item.active .down {
+  z-index: 2;
+  animation: turn-down 0.5s 0.5s linear both;
+}
+
+@keyframes turn-down {
+  0% {
+    transform: rotateX(90deg);
+  }
+  100% {
+    transform: rotateX(0deg);
+  }
+}
+
+@keyframes turn-up {
+  0% {
+    transform: rotateX(0deg);
+  }
+  100% {
+    transform: rotateX(-90deg);
+  }
+}
+
+@keyframes asd {
+  0% {
+    z-index: 2;
+  }
+  5% {
+    z-index: 4;
+  }
+  100% {
+    z-index: 4;
+  }
+}
+
+/* 翻页阴影 */
+.play .shadow {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+}
+
+.play .before .up .shadow {
+  background: linear-gradient(rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 1) 100%);
+  animation: show 0.5s linear both;
+}
+
+.play .active .up .shadow {
+  background: linear-gradient(rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 1) 100%);
+  animation: hide 0.5s 0.3s linear both;
+}
+
+.play .before .down .shadow {
+  background: linear-gradient(rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.1) 100%);
+  animation: show 0.5s linear both;
+}
+
+.play .active .down .shadow {
+  background: linear-gradient(rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.1) 100%);
+  animation: hide 0.5s 0.3s linear both;
+}
+
+@keyframes show {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes hide {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
 }
 </style>

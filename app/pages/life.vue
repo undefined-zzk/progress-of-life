@@ -10,7 +10,7 @@
           {{ stats.daysLived.toLocaleString('en-US') }}
         </p>
         <p class="text-2xl text-sub mt-4">天</p>
-        <p class="mt-12 text-lg text-sub">你已经来到这个世界 {{ stats.hoursLived.toLocaleString('en-US') }} 小时</p>
+        <p class="mt-12 text-lg text-sub">你已经来到这个世界 {{ livedDuration }}</p>
       </div>
     </section>
 
@@ -21,7 +21,7 @@
         <p class="text-2xl sm:text-3xl font-semibold mb-8">你已经走过</p>
         <p class="display-number text-7xl sm:text-9xl font-bold text-primary leading-none mb-10">{{ formatPercent(stats.progressPercent) }}<span class="text-4xl">%</span></p>
         <ProgressBar :percent="stats.progressPercent" />
-        <p class="mt-10 text-sm text-sub leading-relaxed">
+        <p v-if="!shortText" class="mt-10 text-sm text-sub leading-relaxed">
           基于你设定的 {{ profile.lifeExpectancy }} 岁假设寿命。<br />
           以下数据均为估算,并非对实际寿命的预测。
         </p>
@@ -31,9 +31,17 @@
     <!-- 屏 3:实时倒计时(右侧滑入) -->
     <section class="fss-panel" data-enter="right">
       <div class="fss-inner text-center px-6">
-        <p class="text-sm text-sub tracking-[0.3em] mb-8">实时倒计时</p>
-        <p class="text-xl sm:text-2xl text-sub mb-12">如果活到 {{ profile.lifeExpectancy }} 岁,还有大约</p>
-        <div class="flex items-end justify-center gap-3 sm:gap-5">
+        <!-- 生命结束:倒计时归零,提示生命结束并给出语录 -->
+        <div v-if="isLifeEnded" class="px-4">
+          <p class="text-2xl sm:text-3xl font-semibold text-ink mb-6">生命已到达终点</p>
+          <blockquote class="text-lg sm:text-xl text-sub italic leading-relaxed">"{{ endQuote.text }}"</blockquote>
+          <p v-if="endQuote.author" class="mt-3 text-sm text-sub/70">—— {{ endQuote.author }}</p>
+        </div>
+
+        <template v-else>
+          <p v-if="shortText" class="text-xl sm:text-2xl text-sub mb-12">{{ shortText }}</p>
+          <p v-else class="text-xl sm:text-2xl text-sub mb-12">如果活到 {{ profile.lifeExpectancy }} 岁,还有大约</p>
+          <div class="flex items-end justify-center gap-3 sm:gap-5">
           <!-- 天:翻页卡片(与首页统一) -->
           <div class="text-center">
             <FlipClock :value="stats.countdown.days" size="xl" />
@@ -49,11 +57,12 @@
             <span v-if="idx < timeUnits.length - 1" class="text-5xl sm:text-7xl text-sub card-colon">:</span>
           </template>
         </div>
+        </template>
       </div>
     </section>
 
-    <!-- 屏 4:剩余事件 -->
-    <section class="fss-panel">
+    <!-- 屏 4:剩余事件(短寿命/生命不足1岁时无意义,不显示) -->
+    <section v-if="!shortText" class="fss-panel">
       <div class="fss-inner w-full max-w-4xl px-6">
         <p class="text-sm text-sub tracking-[0.3em] mb-6 text-center">你还可能拥有</p>
         <div class="grid grid-cols-2 xl:grid-cols-4 gap-5">
@@ -75,7 +84,7 @@
     </section>
 
     <!-- 屏 5:时间分配(左侧滑入) -->
-    <section class="fss-panel" data-enter="left">
+    <section v-if="!shortText" class="fss-panel" data-enter="left">
       <div class="fss-inner w-full max-w-3xl px-6">
         <p class="text-sm text-sub tracking-[0.3em] mb-6">时间都去哪了?</p>
         <p class="text-2xl sm:text-3xl font-semibold mb-12">如果保持现在的习惯</p>
@@ -96,22 +105,22 @@
     </section>
 
     <!-- 屏 6:人生时间线(右侧滑入) -->
-    <section class="fss-panel" data-enter="right">
+    <section v-if="!shortText" class="fss-panel" data-enter="right">
       <div class="fss-inner w-full max-w-3xl px-6">
         <p class="text-sm text-sub tracking-[0.3em] mb-6">人生时间线</p>
         <div class="card p-10">
           <div v-for="(item, i) in timeline" :key="i" class="relative pl-10 pb-9" :class="{ 'pb-0': i === timeline.length - 1 }">
-            <div v-if="i < timeline.length - 1" class="absolute left-[9px] top-5 bottom-0 w-px bg-line"></div>
+            <div v-if="i < timeline.length - 1" class="absolute left-2.25 top-5 bottom-0 w-px bg-line"></div>
             <span
               class="absolute left-0 top-2.5 w-5 h-5 rounded-full border-2"
               :class="{
                 'bg-primary border-primary': item.type === 'now' || item.type === 'milestone',
-                'bg-card dark:bg-card-dark border-line': item.type === 'past' || item.type === 'future',
+                'bg-card border-line': item.type === 'past' || item.type === 'future',
               }"
             ></span>
             <div class="flex items-baseline gap-4">
               <span class="display-number text-xl font-semibold">{{ item.year }}</span>
-              <span :class="item.type === 'now' ? 'text-primary font-medium text-lg' : 'text-ink dark:text-ink-dark text-lg'">{{ item.label }}</span>
+              <span :class="item.type === 'now' ? 'text-primary font-medium text-lg' : 'text-ink text-lg'">{{ item.label }}</span>
             </div>
           </div>
           <p class="mt-8 text-xs text-sub">未来时间线只是基于年龄阶段的示意,不代表真实预测。</p>
@@ -120,7 +129,7 @@
     </section>
 
     <!-- 屏 7:每日内容 + 行动 -->
-    <section class="fss-panel">
+    <section v-if="!shortText" class="fss-panel">
       <div class="fss-inner text-center px-6 max-w-2xl">
         <p class="text-sm text-sub tracking-[0.3em] mb-10">今天</p>
         <p class="text-2xl sm:text-3xl leading-relaxed">
@@ -130,7 +139,7 @@
         </p>
         <p v-if="streak > 1" class="mt-8 text-sub">你已经连续回来记录 {{ streak }} 天。</p>
         <div class="mt-14 flex flex-col sm:flex-row gap-5 justify-center">
-          <NuxtLink to="/simulator" class="px-10 py-5 rounded-full border border-line text-ink dark:text-ink-dark font-medium text-lg hover:bg-card dark:hover:bg-card-dark transition-colors">
+          <NuxtLink to="/simulator" class="px-10 py-5 rounded-full border border-line text-ink font-medium text-lg hover:bg-card transition-colors">
             如果改变习惯会怎样 →
           </NuxtLink>
           <NuxtLink to="/share" class="px-10 py-5 rounded-full bg-primary text-white font-medium text-lg hover:bg-primary-deep transition-colors">
@@ -157,15 +166,42 @@ definePageMeta({ layout: 'immersive' })
 
 import { onMounted } from 'vue'
 import type { TimelineItem } from '~/types/life'
-import { buildTimeline, formatPercent } from '~/utils/life'
+import { buildTimeline, formatPercent, shortLifeText, livedDurationText, lifespanMs } from '~/utils/life'
+import { lifeEndQuotes } from '~/data/quotes'
+import type { LifeQuote } from '~/data/quotes'
 
-const { profile, stats, init } = useAppState()
+const { profile, stats, init, now } = useAppState()
+
+// 短寿命(0岁/不足1年)时返回替代文案,否则 null 沿用"活到 X 岁"默认措辞
+const shortText = computed(() => (profile.value ? shortLifeText(profile.value) : null))
+
+// 已活时间的精细文本(年/天/时/分/秒),随 now 秒级刷新;
+// 生命结束后(已活超过寿命)停在寿命终点,不再继续累加。
+const livedDuration = computed(() => {
+  if (!profile.value) return ''
+  const capMs = lifespanMs(profile.value)
+  return livedDurationText(profile.value, new Date(now.value), capMs)
+})
+
+// 生命是否已到终点(精确到时刻:now >= 寿命终点)
+const isLifeEnded = computed(() => !!stats.value && stats.value.ended)
+
+// 生命结束时的随机语录
+const endQuote = ref<LifeQuote>(lifeEndQuotes[0]!)
+watch(isLifeEnded, (ended) => {
+  if (ended) {
+    endQuote.value = lifeEndQuotes[Math.floor(Math.random() * lifeEndQuotes.length)]!
+  }
+})
 const { streakDays } = useLifeStore()
 
 // 双保险:进入页面时确保资料已从 LocalStorage 恢复
 onMounted(() => init())
 
-const navLabels = ['第几天', '人生进度', '倒计时', '剩余事件', '时间分配', '时间线', '今天']
+// 短寿命(不足1年)时,屏3之后的屏不显示,导航点也只保留前3个
+const navLabels = computed(() =>
+  shortText.value ? ['第几天', '人生进度', '倒计时'] : ['第几天', '人生进度', '倒计时', '剩余事件', '时间分配', '时间线', '今天'],
+)
 
 const todayLabel = computed(() => {
   const d = new Date()

@@ -1,5 +1,5 @@
 <template>
-  <div ref="root" class="fss relative">
+  <div ref="root" class="fss relative z-1">
     <!-- 内容槽:每个直接子元素(.fss-panel)占满一屏 -->
     <slot />
 
@@ -19,7 +19,7 @@
       >
         <span
           class="hidden sm:inline text-xs text-sub opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap"
-          :class="{ '!opacity-100': i === activeIndex }"
+          :class="{ 'opacity-100!': i === activeIndex }"
         >
           {{ label }}
         </span>

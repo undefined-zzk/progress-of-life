@@ -1,21 +1,21 @@
 <template>
   <div class="min-h-screen flex flex-col">
     <!-- 顶部导航 -->
-    <header class="sticky top-0 z-50 backdrop-blur-md bg-bg/80 dark:bg-bg-dark/80 border-b border-line">
+    <header class="sticky top-0 z-50 backdrop-blur-md bg-bg/80 border-b border-line">
       <nav class="max-w-5xl mx-auto px-5 h-16 flex items-center justify-between">
-        <NuxtLink to="/" class="text-lg font-semibold tracking-tight flex items-center gap-2">
-          <span class="inline-block w-2.5 h-2.5 rounded-full bg-primary"></span>
+        <NuxtLink to="/" class="text-lg font-semibold tracking-tight flex items-center gap-2.5">
+          <img src="/logo.webp" alt="人生进度" class="w-8 h-8 rounded-lg object-cover" />
           人生进度
         </NuxtLink>
 
         <div class="flex items-center gap-4">
           <template v-if="profile">
-            <NuxtLink to="/life" class="text-sm text-sub hover:text-ink dark:hover:text-ink-dark transition-colors">我的进度</NuxtLink>
-            <NuxtLink to="/simulator" class="text-sm text-sub hover:text-ink dark:hover:text-ink-dark transition-colors">模拟器</NuxtLink>
+            <NuxtLink to="/life" class="text-sm text-sub hover:text-ink transition-colors">我的进度</NuxtLink>
+            <NuxtLink to="/simulator" class="text-sm text-sub hover:text-ink transition-colors">模拟器</NuxtLink>
           </template>
           <!-- 主题切换 -->
           <button
-            class="w-9 h-9 rounded-full flex items-center justify-center border border-line hover:bg-card dark:hover:bg-card-dark transition-colors"
+            class="w-9 h-9 rounded-full flex items-center justify-center border border-line hover:bg-card transition-colors"
             :aria-label="isDark ? '切换到浅色主题' : '切换到深色主题'"
             @click="toggleTheme"
           >

@@ -42,11 +42,11 @@
       <div v-if="result.phoneSaved.perDay > 0" class="card p-8">
         <h2 class="text-lg font-semibold mb-6">如果每天少刷 {{ result.phoneSaved.perDay.toFixed(1) }} 小时手机</h2>
         <div class="grid grid-cols-2 gap-4">
-          <div class="p-4 rounded-xl bg-bg dark:bg-bg-dark">
+          <div class="p-4 rounded-xl bg-bg">
             <p class="text-xs text-sub mb-1">一年省下</p>
             <p class="display-number text-2xl font-bold"><AnimatedNumber :value="result.phoneSaved.perYear" /> 小时</p>
           </div>
-          <div class="p-4 rounded-xl bg-bg dark:bg-bg-dark">
+          <div class="p-4 rounded-xl bg-bg">
             <p class="text-xs text-sub mb-1">十年省下</p>
             <p class="display-number text-2xl font-bold"><AnimatedNumber :value="result.phoneSaved.perTenYears" /> 小时</p>
           </div>
@@ -70,11 +70,11 @@
       <div v-if="input.learnHours > 0" class="card p-8">
         <h2 class="text-lg font-semibold mb-6">如果每天学习 {{ input.learnHours }} 小时</h2>
         <div class="grid grid-cols-2 gap-4">
-          <div class="p-4 rounded-xl bg-bg dark:bg-bg-dark">
+          <div class="p-4 rounded-xl bg-bg">
             <p class="text-xs text-sub mb-1">一年累计</p>
             <p class="display-number text-2xl font-bold"><AnimatedNumber :value="result.learn.perYear" /> 小时</p>
           </div>
-          <div class="p-4 rounded-xl bg-bg dark:bg-bg-dark">
+          <div class="p-4 rounded-xl bg-bg">
             <p class="text-xs text-sub mb-1">一生累计</p>
             <p class="display-number text-2xl font-bold"><AnimatedNumber :value="result.learn.perLifetime" /> 小时</p>
           </div>
@@ -85,11 +85,11 @@
       <div v-if="input.exerciseHours > 0" class="card p-8">
         <h2 class="text-lg font-semibold mb-6">如果每周运动 {{ input.exerciseHours }} 小时</h2>
         <div class="grid grid-cols-2 gap-4">
-          <div class="p-4 rounded-xl bg-bg dark:bg-bg-dark">
+          <div class="p-4 rounded-xl bg-bg">
             <p class="text-xs text-sub mb-1">一年累计</p>
             <p class="display-number text-2xl font-bold"><AnimatedNumber :value="result.exercise.perYear" /> 小时</p>
           </div>
-          <div class="p-4 rounded-xl bg-bg dark:bg-bg-dark">
+          <div class="p-4 rounded-xl bg-bg">
             <p class="text-xs text-sub mb-1">一生累计</p>
             <p class="display-number text-2xl font-bold"><AnimatedNumber :value="result.exercise.perLifetime" /> 小时</p>
           </div>

@@ -1,4 +1,4 @@
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import type { LifeStats, UserProfile } from '~/types/life'
 import { computeLifeStats } from '~/utils/life'
 import { useLifeStore } from './useLifeStore'
@@ -25,10 +25,14 @@ export function useAppState() {
     }
   }
 
-  // 客户端每次引用状态时,若 profile 为空则按需从 LocalStorage 恢复。
-  // 避免 SPA 导航(跳转 life 后再返回首页)时 profile 意外为 null 导致内容消失。
+  // 客户端挂载后再从 LocalStorage 恢复。
+  // 若在 setup 阶段同步 init,则服务端渲染(profile 为 null)与客户端水合首帧
+  // (profile 已恢复)状态不一致,会导致 Vue hydration mismatch。
+  // 延迟到 onMounted:水合首帧与 SSR 一致(均无 profile),挂载后再恢复触发更新。
   if (!import.meta.server) {
-    init()
+    onMounted(() => {
+      init()
+    })
   }
 
   /** 设置资料(保存并触发重新计算) */

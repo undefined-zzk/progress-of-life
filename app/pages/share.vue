@@ -5,7 +5,7 @@
 
     <!-- 分享卡片 -->
     <div ref="cardEl" class="share-card mx-auto max-w-md rounded-2xl overflow-hidden shadow-lg">
-      <div class="p-10 text-center bg-card dark:bg-card-dark">
+      <div class="p-10 text-center bg-card">
         <p class="text-xs tracking-[0.3em] text-sub mb-8">MY LIFE</p>
         <p class="text-lg text-sub mb-2">第</p>
         <p class="display-number text-7xl font-bold text-primary leading-none">{{ stats.daysLived.toLocaleString('en-US') }}</p>
@@ -17,7 +17,7 @@
         </div>
 
         <div class="h-3 rounded-full bg-line overflow-hidden mb-8">
-          <div class="h-full rounded-full bg-gradient-to-r from-primary to-accent" :style="{ width: `${stats.progressPercent}%` }"></div>
+          <div class="h-full rounded-full bg-linear-to-r from-primary to-accent" :style="{ width: `${stats.progressPercent}%` }"></div>
         </div>
 
         <div class="grid grid-cols-3 gap-2 text-center">
@@ -49,7 +49,7 @@
         保存图片
       </button>
       <button
-        class="px-8 py-4 rounded-full border border-line text-ink dark:text-ink-dark font-medium hover:bg-card dark:hover:bg-card-dark transition-colors"
+        class="px-8 py-4 rounded-full border border-line text-ink font-medium hover:bg-card transition-colors"
         @click="copyLink"
       >
         {{ copied ? '已复制链接' : '复制链接' }}

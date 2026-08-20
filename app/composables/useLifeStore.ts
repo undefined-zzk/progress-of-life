@@ -71,6 +71,7 @@ export function useLifeStore() {
       lifeStatus: null,
       exerciseHours: 3,
       lifeExpectancy: 80,
+      lifeExpectancyMs: 80 * 365 * 24 * 60 * 60 * 1000,
       createdAt: new Date().toISOString(),
       lastSeenAt: new Date().toISOString(),
       seenDays: [new Date().toISOString().slice(0, 10)],

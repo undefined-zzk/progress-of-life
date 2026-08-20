@@ -2,6 +2,7 @@ import type { LifeStats, SimulationInput, SimulationResult, TimelineItem, UserPr
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const YEAR_DAYS = 365
+const YEAR_MS = DAY_MS * YEAR_DAYS
 
 /** 两个日期的整天差(忽略时分秒,按自然日计算) */
 function dayDiff(from: Date, to: Date): number {
@@ -12,13 +13,87 @@ function dayDiff(from: Date, to: Date): number {
 
 /** 精确年龄(年,带小数) */
 function preciseAge(birth: Date, now: Date): number {
-  return (now.getTime() - birth.getTime()) / (DAY_MS * YEAR_DAYS)
+  return (now.getTime() - birth.getTime()) / YEAR_MS
 }
 
-/** 根据出生日期 + 假设寿命计算剩余天数(按自然日) */
-function daysLeftCalc(birth: Date, now: Date, lifeExpectancy: number): number {
-  const end = new Date(birth.getFullYear() + lifeExpectancy, birth.getMonth(), birth.getDate())
-  return dayDiff(now, end)
+/** 解析出生时间 'HH:mm' -> [时, 分],非法/缺失返回 [0, 0] */
+function parseBirthTime(bt: string | null | undefined): [number, number] {
+  if (!bt) return [0, 0]
+  const m = /^(\d{1,2}):(\d{2})$/.exec(bt)
+  if (!m) return [0, 0]
+  return [parseInt(m[1]!, 10), parseInt(m[2]!, 10)]
+}
+
+/** 出生时刻(含出生时间时分,未填则 00:00) */
+function birthMoment(birthDate: string, birthTime?: string | null): Date {
+  const [h, m] = parseBirthTime(birthTime)
+  const d = new Date(birthDate)
+  d.setHours(h, m, 0, 0)
+  return d
+}
+
+/** 精确寿命毫秒:优先使用 lifeExpectancyMs(支持时分秒自定义),否则按整年回退 */
+export function lifespanMs(profile: Pick<UserProfile, 'lifeExpectancy' | 'lifeExpectancyMs'>): number {
+  if (typeof profile.lifeExpectancyMs === 'number' && Number.isFinite(profile.lifeExpectancyMs)) {
+    return profile.lifeExpectancyMs
+  }
+  return profile.lifeExpectancy * YEAR_MS
+}
+
+/** 根据出生时刻 + 精确寿命毫秒计算剩余天数(按自然日) */
+function daysLeftCalc(birth: Date, now: Date, lifeMs: number): number {
+  return dayDiff(now, new Date(birth.getTime() + lifeMs))
+}
+
+/** 已活时间的精细文本(年/天/时/分/秒),用于"你已经来到这个世界 X"。
+ *  capMs:可选上限(如寿命毫秒),已活时间超过上限(生命结束)时停在寿命终点,不再累加。 */
+export function livedDurationText(
+  profile: Pick<UserProfile, 'birthDate' | 'birthTime'>,
+  now: Date = new Date(),
+  capMs?: number,
+): string {
+  const birth = birthMoment(profile.birthDate, profile.birthTime)
+  let ms = Math.max(0, now.getTime() - birth.getTime())
+  if (capMs != null && Number.isFinite(capMs)) ms = Math.min(ms, capMs)
+  if (ms <= 0) return '0 秒'
+  const totalSecs = Math.floor(ms / 1000)
+  const s = totalSecs % 60
+  const mins = Math.floor(totalSecs / 60)
+  const m = mins % 60
+  const hours = Math.floor(mins / 60)
+  const h = hours % 24
+  const days = Math.floor(hours / 24)
+  const d = days % 365
+  const years = Math.floor(days / 365)
+  const parts: string[] = []
+  if (years) parts.push(`${years} 年`)
+  if (d) parts.push(`${d} 天`)
+  if (h) parts.push(`${h} 小时`)
+  if (m) parts.push(`${m} 分钟`)
+  if (s) parts.push(`${s} 秒`)
+  return parts.join(' ')
+}
+
+/**
+ * 短寿命文案:当精确寿命不足 1 年(0 岁/出生即死亡)时,返回合适的说明文案;
+ * 正常寿命(>=1 年)返回 null,由调用方沿用"活到 X 岁"的默认措辞。
+ */
+export function shortLifeText(profile: Pick<UserProfile, 'lifeExpectancy' | 'lifeExpectancyMs'>): string | null {
+  const ms = profile.lifeExpectancyMs
+  if (typeof ms !== 'number' || !Number.isFinite(ms)) return null
+  if (ms >= YEAR_MS) return null
+  if (ms <= 0) return '出生即死亡,人生在此刻结束'
+  const totalSecs = Math.floor(ms / 1000)
+  const d = Math.floor(totalSecs / 86400)
+  const h = Math.floor((totalSecs % 86400) / 3600)
+  const m = Math.floor((totalSecs % 3600) / 60)
+  const s = totalSecs % 60
+  const parts: string[] = []
+  if (d) parts.push(`${d}天`)
+  if (h) parts.push(`${h}小时`)
+  if (m) parts.push(`${m}分钟`)
+  if (s) parts.push(`${s}秒`)
+  return `寿命只有 ${parts.join(' ')}`
 }
 
 /**
@@ -26,26 +101,31 @@ function daysLeftCalc(birth: Date, now: Date, lifeExpectancy: number): number {
  * 所有计算均在客户端完成,符合隐私原则。
  */
 export function computeLifeStats(profile: UserProfile, now: Date = new Date()): LifeStats {
-  const birth = new Date(profile.birthDate)
+  const birth = birthMoment(profile.birthDate, profile.birthTime)
   const lifeExpectancy = profile.lifeExpectancy
+  const lifeMs = lifespanMs(profile)
 
   // ---- 核心 ----
-  const daysLived = dayDiff(birth, now)
-  const age = preciseAge(birth, now)
-  const hoursLived = Math.floor((now.getTime() - birth.getTime()) / (60 * 60 * 1000))
-  const minutesLived = Math.floor((now.getTime() - birth.getTime()) / (60 * 1000))
+  // 出生日期晚于当前时间(如误选未来日期)时,已活时间不取负数,统一按 0 处理。
+  const daysLived = Math.max(0, dayDiff(birth, now))
+  const age = Math.max(0, preciseAge(birth, now))
+  const hoursLived = Math.max(0, Math.floor((now.getTime() - birth.getTime()) / (60 * 60 * 1000)))
+  const minutesLived = Math.max(0, Math.floor((now.getTime() - birth.getTime()) / (60 * 1000)))
 
-  const totalDays = lifeExpectancy * YEAR_DAYS
-  const progress = totalDays > 0 ? Math.min(1, Math.max(0, daysLived / totalDays)) : 0
+  // 人生进度:用精确寿命毫秒与已活毫秒计算,短寿命(不足1年/0岁)时进度合理,
+  // 避免 lifeExpectancy 为 0 时进度恒为 0 的问题。
+  const end = new Date(birth.getTime() + lifeMs)
+  const livedMs = Math.max(0, now.getTime() - birth.getTime())
+  // 已到寿命终点(now >= end)时进度为 100%
+  const progress = now.getTime() >= end.getTime() ? 1 : lifeMs > 0 ? Math.min(1, Math.max(0, livedMs / lifeMs)) : 0
 
-  // ---- 剩余时间 ----
-  const daysLeft = Math.max(0, daysLeftCalc(birth, now, lifeExpectancy))
+  // ---- 剩余时间(精确到出生时刻 + 精确寿命毫秒) ----
+  const daysLeft = Math.max(0, dayDiff(now, end))
   const hoursLeft = daysLeft * 24
   const yearsLeft = daysLeft / YEAR_DAYS
   const monthsLeft = yearsLeft * 12
 
   // ---- 实时倒计时(到假设寿命终点) ----
-  const end = new Date(birth.getFullYear() + lifeExpectancy, birth.getMonth(), birth.getDate())
   const remainMs = Math.max(0, end.getTime() - now.getTime())
   const cdDays = Math.floor(remainMs / DAY_MS)
   const cdHours = Math.floor((remainMs % DAY_MS) / (60 * 60 * 1000))
@@ -73,6 +153,7 @@ export function computeLifeStats(profile: UserProfile, now: Date = new Date()): 
     minutesLived,
     progress,
     progressPercent: progress * 100,
+    ended: now.getTime() >= end.getTime(),
     yearsLeft,
     monthsLeft,
     daysLeft,
@@ -95,8 +176,8 @@ export function computeLifeStats(profile: UserProfile, now: Date = new Date()): 
  * 人生模拟器:输入目标习惯,输出"如果改变习惯会怎样"的估算。
  */
 export function computeSimulation(profile: UserProfile, input: SimulationInput, now: Date = new Date()): SimulationResult {
-  const birth = new Date(profile.birthDate)
-  const daysLeft = Math.max(0, daysLeftCalc(birth, now, profile.lifeExpectancy))
+  const birth = birthMoment(profile.birthDate, profile.birthTime)
+  const daysLeft = Math.max(0, daysLeftCalc(birth, now, lifespanMs(profile)))
   const yearsLeft = daysLeft / YEAR_DAYS
 
   // 少刷手机:相对用户当前手机时间
@@ -140,9 +221,10 @@ export function computeSimulation(profile: UserProfile, input: SimulationInput, 
  * 未来节点仅为基于年龄阶段的示意,不代表真实预测。
  */
 export function buildTimeline(profile: UserProfile, now: Date = new Date()): TimelineItem[] {
-  const birthYear = new Date(profile.birthDate).getFullYear()
+  const birth = birthMoment(profile.birthDate, profile.birthTime)
+  const birthYear = birth.getFullYear()
   const currentYear = now.getFullYear()
-  const currentAge = Math.floor(preciseAge(new Date(profile.birthDate), now))
+  const currentAge = Math.floor(preciseAge(birth, now))
 
   const items: TimelineItem[] = []
   // 过去的关键节点(基于年龄阶段的典型事件,非真实预测)

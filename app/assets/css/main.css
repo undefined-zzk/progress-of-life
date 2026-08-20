@@ -97,3 +97,27 @@ body {
     transition-duration: 0.001ms !important;
   }
 }
+
+/* 首页第一个屏(hero)的星空背景
+   放在第一个 .fss-panel 内,absolute 铺满该屏并随屏滚动,不覆盖其他屏。
+   .fss-panel 自带 overflow:hidden,超出部分被裁剪,不影响其它内容。
+   需全局样式以覆盖 ElasticMesh 组件内联的 position/width/height。 */
+.hero-mesh {
+  position: absolute !important;
+  inset: 0;
+  overflow: hidden;
+}
+
+/* 让 ElasticMesh 网格铺满整个面板:
+   shader 中 uFit=0.82 会让面片缩小到容器大小的 82%,四周露出底色。
+   通过把容器放大到 132% 并居中,使网格实际铺满,
+   同时保留内部交互时的边缘变形余量(溢出部分被 overflow:hidden 裁剪)。
+   用 !important 覆盖组件内联的 width/height:100% 与 position:relative。 */
+.hero-mesh > .elastic-mesh {
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  width: 132% !important;
+  height: 132% !important;
+  transform: translate(-50%, -50%) !important;
+}

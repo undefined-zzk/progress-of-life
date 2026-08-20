@@ -13,6 +13,8 @@ export interface UserProfile {
   exerciseHours?: number // 每周运动小时
   // 假设寿命(默认 80)
   lifeExpectancy: number
+  // 精确假设寿命(毫秒,可选;自定义时分秒时使用,兼容旧数据回退到 lifeExpectancy)
+  lifeExpectancyMs?: number
   // 元数据
   createdAt: string // 首次创建时间 ISO
   lastSeenAt: string // 最近访问时间 ISO
@@ -28,6 +30,7 @@ export interface LifeStats {
   minutesLived: number
   progress: number // 人生进度 0~1
   progressPercent: number // 0~100
+  ended: boolean // 是否已到寿命终点(精确到时刻,now >= 寿命终点)
   // 剩余时间
   yearsLeft: number
   monthsLeft: number
